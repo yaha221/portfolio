@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# Runs code style check and PHPStan before a commit that touches backend PHP code.
+# Checks the working tree, not only staged changes. Skip once with `git commit --no-verify`.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+if ! git diff --cached --name-only --diff-filter=ACMR | grep -qE '^backend/(.*\.php|.*\.neon|composer\.(json|lock))$'; then
+    exit 0
+fi
+
+if ! docker compose ps --status running --services 2>/dev/null | grep -qx php; then
+    echo "pre-commit: php container is not running, start it with 'docker compose up -d'" >&2
+    exit 1
+fi
+
+docker compose exec -T php composer lint

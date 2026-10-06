@@ -8,6 +8,9 @@ if [ ! -f .env ]; then
     printf 'HOST_UID=%s\nHOST_GID=%s\n' "$(id -u)" "$(id -g)" > .env
 fi
 
+# Versioned git hooks (pre-commit runs `composer lint`)
+git config core.hooksPath .githooks
+
 docker compose build
 docker compose run --rm --no-deps php composer install
 docker compose up -d

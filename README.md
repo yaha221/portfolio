@@ -39,7 +39,7 @@ docker compose down                                    # остановить
 ## Качество кода
 
 ```bash
-docker compose exec php composer lint                  # стиль + PHPStan, перед каждым коммитом
+docker compose exec php composer lint                  # стиль + PHPStan (то же запускает pre-commit хук)
 docker compose exec php composer cs-fix                # автоматически исправить стиль
 ```
 
