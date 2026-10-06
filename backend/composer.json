@@ -25,6 +25,7 @@
         "symfony/property-info": "7.4.*",
         "symfony/rate-limiter": "7.4.*",
         "symfony/runtime": "7.4.*",
+        "symfony/security-bundle": "7.4.*",
         "symfony/serializer": "7.4.*",
         "symfony/uid": "7.4.*",
         "symfony/validator": "7.4.*",
@@ -76,13 +77,15 @@
         "lint": [
             "@cs-check",
             "@phpstan"
-        ]
+        ],
+        "test": "phpunit"
     },
     "scripts-descriptions": {
         "cs-check": "Show code style violations without changing files",
         "cs-fix": "Fix code style in place",
         "phpstan": "Run static analysis (level 8)",
-        "lint": "Run code style check and static analysis"
+        "lint": "Run code style check and static analysis",
+        "test": "Run PHPUnit (unit and integration, uses the portfolio_test database)"
     },
     "conflict": {
         "symfony/symfony": "*"

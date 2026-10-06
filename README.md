@@ -26,11 +26,15 @@ PHP и Composer локально не нужны — всё работает в 
 | Mailpit | http://localhost:8025 |
 | PostgreSQL | localhost:5432 (app / app, БД `portfolio`) |
 
+Админ из фикстур: `admin@portfolio.local`, пароль — `UserFactory::DEFAULT_PASSWORD` в `backend/src/Factory/UserFactory.php` (только dev/test).
+
 ## Полезные команды
 
 ```bash
 docker compose up -d                                   # поднять стек
 docker compose exec php bin/console doctrine:migrations:migrate
+docker compose exec php bin/console doctrine:fixtures:load   # тестовые данные для разработки (очищает БД)
+docker compose exec php composer test                  # PHPUnit, база portfolio_test создаётся сама
 docker compose exec php composer require <package>
 docker compose logs -f worker                          # логи воркера очереди
 docker compose down                                    # остановить
