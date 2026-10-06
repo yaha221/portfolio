@@ -26,4 +26,22 @@ final readonly class TechnologyRef
     {
         return new self($technology->getSlug(), $technology->getName(), $technology->getIcon());
     }
+
+    /**
+     * Sorted by name: a collection changed in memory keeps insertion order, not the mapping's OrderBy.
+     *
+     * @param iterable<Technology> $technologies
+     *
+     * @return list<self>
+     */
+    public static function listOf(iterable $technologies): array
+    {
+        $refs = [];
+        foreach ($technologies as $technology) {
+            $refs[] = self::fromEntity($technology);
+        }
+        usort($refs, static fn (self $a, self $b) => strnatcasecmp($a->name, $b->name));
+
+        return $refs;
+    }
 }

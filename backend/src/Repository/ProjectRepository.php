@@ -49,6 +49,23 @@ class ProjectRepository extends ServiceEntityRepository
         return new Paginator($qb->getQuery(), fetchJoinCollection: true);
     }
 
+    /**
+     * All projects including drafts, in display order.
+     *
+     * @return list<Project>
+     */
+    public function findAllForAdmin(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->addSelect('t', 'i')
+            ->leftJoin('p.technologies', 't')
+            ->leftJoin('p.images', 'i')
+            ->orderBy('p.sortOrder', 'ASC')
+            ->addOrderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findPublishedBySlug(string $slug): ?Project
     {
         return $this->createQueryBuilder('p')

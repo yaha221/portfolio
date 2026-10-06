@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api;
 
+use App\Entity\User;
+use App\Factory\UserFactory;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -13,7 +16,25 @@ abstract class ApiTestCase extends WebTestCase
 
     protected function setUp(): void
     {
-        $this->client = self::createClient();
+        // HTTPS: the refresh cookie is Secure, so the test browser sends it back only over https
+        $this->client = self::createClient(server: ['HTTPS' => 'on']);
+    }
+
+    /**
+     * Signs further requests with an access token, skipping the login endpoint.
+     */
+    protected function loginAs(User $user): void
+    {
+        $token = self::getContainer()->get(JWTTokenManagerInterface::class)->create($user);
+        $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$token);
+    }
+
+    protected function loginAsAdmin(): User
+    {
+        $admin = UserFactory::new()->admin()->create();
+        $this->loginAs($admin);
+
+        return $admin;
     }
 
     /**
@@ -27,6 +48,18 @@ abstract class ApiTestCase extends WebTestCase
         self::assertResponseHeaderSame('Content-Type', 'application/json');
 
         return $this->decodeResponse();
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed> empty for an empty body (204)
+     */
+    protected function sendJson(string $method, string $uri, array $data = []): array
+    {
+        $this->client->jsonRequest($method, $uri, $data);
+
+        return '' === $this->client->getResponse()->getContent() ? [] : $this->decodeResponse();
     }
 
     /**
@@ -44,9 +77,17 @@ abstract class ApiTestCase extends WebTestCase
     }
 
     /**
+     * @return list<string> property paths of the violations in a 400/422 problem
+     */
+    protected function assertViolations(int $status = 422): array
+    {
+        return array_column($this->assertProblem($status)['violations'], 'propertyPath');
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function decodeResponse(): array
+    protected function decodeResponse(): array
     {
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($data);

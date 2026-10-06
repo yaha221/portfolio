@@ -9,6 +9,8 @@
 parameters:
     # Absolute, because the SPA runs on another origin
     app.uploads_base_url: '%env(UPLOADS_BASE_URL)%'
+    # 30 days
+    app.refresh_token_ttl: 2592000
 
 services:
     # default configuration for services in *this* file

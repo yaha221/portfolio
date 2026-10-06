@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Dto\Response;
 
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * Error body in RFC 9457 format, served as application/problem+json.
@@ -25,6 +26,14 @@ final readonly class ProblemDetails
         #[OA\Property(example: 'about:blank')]
         public string $type = 'about:blank',
     ) {
+    }
+
+    /**
+     * @param array<string, string|list<string>> $headers
+     */
+    public function toResponse(array $headers = []): JsonResponse
+    {
+        return new JsonResponse($this->toArray(), $this->status, ['Content-Type' => 'application/problem+json'] + $headers);
     }
 
     /**

@@ -15,6 +15,28 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
+        # Swagger UI and its spec are public
+        api_doc:
+            pattern: ^/api/doc
+            security: false
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            # Unauthenticated access to a protected route answers 401 from the JWT authenticator
+            entry_point: jwt
+            # POST /api/auth/login {"email", "password"} -> access token; refresh cookie is added by JwtAuthenticationListener
+            json_login:
+                check_path: api_auth_login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            # Authorization: Bearer <token> on every other request
+            jwt: ~
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
         main:
             lazy: true
             provider: app_user_provider
@@ -27,8 +49,7 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/api/admin, roles: ROLE_ADMIN }
 
 when@test:
     security:

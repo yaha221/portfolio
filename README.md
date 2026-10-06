@@ -17,7 +17,7 @@ PHP и Composer локально не нужны — всё работает в 
 ./setup.sh
 ```
 
-Скрипт запишет в `.env` ваш UID/GID (контейнеры работают от вашего пользователя), соберёт образы, поставит зависимости и поднимет стек.
+Скрипт запишет в `.env` ваш UID/GID (контейнеры работают от вашего пользователя), соберёт образы, поставит зависимости, поднимет стек, сгенерирует ключи JWT (`backend/config/jwt`, не в Git) и применит миграции.
 
 | Сервис | Адрес |
 |---|---|
@@ -28,6 +28,16 @@ PHP и Composer локально не нужны — всё работает в 
 | PostgreSQL | localhost:5432 (app / app, БД `portfolio`) |
 
 Админ из фикстур: `admin@portfolio.local`, пароль — `UserFactory::DEFAULT_PASSWORD` в `backend/src/Factory/UserFactory.php` (только dev/test).
+
+## Авторизация админки
+
+1. `POST /api/auth/login` с `{"email", "password"}` → `{"token", "expiresIn": 900}` и httpOnly-cookie `refresh_token` (30 дней, только для `/api/auth`).
+2. Запросы к `/api/admin/*` — с заголовком `Authorization: Bearer <token>`.
+3. Когда токен истёк — `POST /api/auth/refresh` (SPA шлёт cookie через `credentials: 'include'`). Refresh-токен одноразовый: приходит новая cookie.
+4. `POST /api/auth/logout` отзывает refresh-токен.
+
+В базе хранится только SHA-256 refresh-токена. После 5 неудачных входов за 15 минут — 429.
+Загруженные картинки лежат в `backend/public/uploads` (не в Git), nginx отдаёт их по `/uploads/...`.
 
 ## Полезные команды
 

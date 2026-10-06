@@ -47,7 +47,7 @@ final readonly class ProjectDetail
             null === $cover ? null : $uploads->url($cover),
             $project->getRepoUrl(),
             $project->getDemoUrl(),
-            array_values(array_map(TechnologyRef::fromEntity(...), $project->getTechnologies()->toArray())),
+            TechnologyRef::listOf($project->getTechnologies()),
             array_values(array_map(
                 static fn ($image) => ProjectImageView::fromEntity($image, $uploads),
                 $project->getImages()->toArray(),

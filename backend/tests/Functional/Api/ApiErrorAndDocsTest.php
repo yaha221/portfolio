@@ -21,16 +21,16 @@ final class ApiErrorAndDocsTest extends ApiTestCase
         self::assertResponseHeaderSame('Allow', 'GET');
     }
 
-    public function testOpenApiDocumentListsPublicEndpoints(): void
+    public function testOpenApiDocumentDescribesTheApi(): void
     {
-        $this->client->request('GET', '/api/doc.json');
-        self::assertResponseIsSuccessful();
+        $doc = $this->getJson('/api/doc.json');
 
-        $doc = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertIsArray($doc);
-        self::assertSame(
-            ['/api/experience', '/api/projects', '/api/projects/{slug}', '/api/skills', '/api/technologies'],
-            array_keys($doc['paths']),
-        );
+        $expected = [
+            '/api/projects', '/api/projects/{slug}', '/api/technologies', '/api/skills', '/api/experience',
+            '/api/auth/login', '/api/auth/refresh', '/api/auth/logout',
+            '/api/admin/projects', '/api/admin/projects/{id}', '/api/admin/projects/{id}/images', '/api/admin/messages',
+        ];
+        self::assertSame([], array_diff($expected, array_keys($doc['paths'])));
+        self::assertSame([['Bearer' => []]], $doc['paths']['/api/admin/projects']['get']['security']);
     }
 }

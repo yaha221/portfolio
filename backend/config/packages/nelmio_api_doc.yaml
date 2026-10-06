@@ -6,6 +6,12 @@ nelmio_api_doc:
                 REST API сайта-портфолио.
                 Ошибки возвращаются в формате RFC 9457 (`application/problem+json`).
             version: 1.0.0
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
     areas:
         default:
             # Everything under /api except the documentation itself

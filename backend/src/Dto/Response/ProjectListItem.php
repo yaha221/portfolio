@@ -40,7 +40,7 @@ final readonly class ProjectListItem
             null === $cover ? null : $uploads->url($cover),
             $project->getRepoUrl(),
             $project->getDemoUrl(),
-            array_values(array_map(TechnologyRef::fromEntity(...), $project->getTechnologies()->toArray())),
+            TechnologyRef::listOf($project->getTechnologies()),
         );
     }
 }

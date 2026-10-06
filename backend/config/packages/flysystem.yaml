@@ -1,0 +1,18 @@
+# Read the documentation at https://github.com/thephpleague/flysystem-bundle/blob/master/docs/1-getting-started.md
+flysystem:
+    storages:
+        # Public uploads (project images), served by nginx from public/uploads; see UploadUrlGenerator
+        uploads.storage:
+            adapter: 'local'
+            options:
+                directory: '%kernel.project_dir%/public/uploads'
+            # nginx runs as another user: directories 0755 and files 0644 instead of Flysystem's private 0700/0600
+            visibility: public
+            directory_visibility: public
+
+when@test:
+    flysystem:
+        storages:
+            uploads.storage:
+                adapter: 'memory'
+                options: {}

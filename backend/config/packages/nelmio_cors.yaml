@@ -6,5 +6,7 @@ nelmio_cors:
         allow_headers: ['Content-Type', 'Authorization']
         expose_headers: ['Link']
         max_age: 3600
+        # The refresh token travels in an httpOnly cookie; the SPA sends it with credentials: 'include'
+        allow_credentials: true
     paths:
         '^/': null

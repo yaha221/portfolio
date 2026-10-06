@@ -14,6 +14,10 @@ git config core.hooksPath .githooks
 docker compose build
 docker compose run --rm --no-deps php composer install
 docker compose up -d
+# JWT signing keys (backend/config/jwt, not committed)
+docker compose exec -T php bin/console lexik:jwt:generate-keypair --skip-if-exists
+chmod 600 backend/config/jwt/private.pem
+docker compose exec -T php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
 
 cat <<'EOF'
 
