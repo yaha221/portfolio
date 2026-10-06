@@ -1,0 +1,50 @@
+# Портфолио
+
+Backend: Symfony 7.4 (REST, ручные контроллеры) + PostgreSQL 17 + RabbitMQ (Symfony Messenger).
+Frontend: отдельный SPA на Vue 3 (`frontend/`, будет позже). Файлы — на локальном диске.
+
+## Требования
+
+- WSL2 с Ubuntu; проект лежит в файловой системе Linux (`~/projects/portfolio`), не на диске `C:`
+- Docker Desktop с включённой интеграцией для Ubuntu (Settings → Resources → WSL integration)
+- Git внутри Ubuntu
+
+PHP и Composer локально не нужны — всё работает в контейнерах.
+
+## Первый запуск
+
+```bash
+./setup.sh
+```
+
+Скрипт запишет в `.env` ваш UID/GID (контейнеры работают от вашего пользователя), соберёт образы, поставит зависимости и поднимет стек.
+
+| Сервис | Адрес |
+|---|---|
+| API | http://localhost:8080 |
+| RabbitMQ UI | http://localhost:15672 (app / app) |
+| Mailpit | http://localhost:8025 |
+| PostgreSQL | localhost:5432 (app / app, БД `portfolio`) |
+
+## Полезные команды
+
+```bash
+docker compose up -d                                   # поднять стек
+docker compose exec php bin/console doctrine:migrations:migrate
+docker compose exec php composer require <package>
+docker compose logs -f worker                          # логи воркера очереди
+docker compose down                                    # остановить
+```
+
+## IDE
+
+- VS Code: расширение WSL, затем `code .` из папки проекта в Ubuntu
+- PhpStorm: открыть `\\wsl$\Ubuntu\home\<user>\projects\portfolio`, PHP-интерпретатор — из Docker Compose (сервис `php`)
+
+## Структура
+
+```
+backend/       Symfony API
+frontend/      SPA (позже)
+docker/        Dockerfile php, конфиг nginx
+```
