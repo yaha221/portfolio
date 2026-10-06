@@ -1,0 +1,13 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Portfolio API
+            description: |
+                REST API сайта-портфолио.
+                Ошибки возвращаются в формате RFC 9457 (`application/problem+json`).
+            version: 1.0.0
+    areas:
+        default:
+            # Everything under /api except the documentation itself
+            path_patterns:
+                - ^/api(?!/doc)

@@ -61,6 +61,7 @@ final class AppStory extends Story
             'title' => 'Портфолио',
             'description' => 'Этот сайт: REST API на Symfony, очередь RabbitMQ для фоновых задач и SPA на Vue.',
             'content' => "## Стек\n\nSymfony 7.4, PostgreSQL 17, RabbitMQ, Vue 3, Docker.\n\n## Что внутри\n\nРучные REST-контроллеры с DTO, JWT для админки, письма и превью картинок через Messenger.",
+            'repoUrl' => null,
             'demoUrl' => null,
             'sortOrder' => 0,
             'technologies' => array_map(

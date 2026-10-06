@@ -17,4 +17,15 @@ class ExperienceRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Experience::class);
     }
+
+    /**
+     * Current job first, then by most recent end date.
+     *
+     * @return list<Experience>
+     */
+    public function findAllOrdered(): array
+    {
+        // PostgreSQL sorts NULLs first in DESC order, so endDate = null (current job) leads
+        return $this->findBy([], ['endDate' => 'DESC', 'startDate' => 'DESC']);
+    }
 }

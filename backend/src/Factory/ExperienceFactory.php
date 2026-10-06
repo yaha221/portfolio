@@ -20,7 +20,10 @@ final class ExperienceFactory extends PersistentObjectFactory
 
     public function current(): self
     {
-        return $this->with(['endDate' => null]);
+        return $this->with([
+            'startDate' => DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('-2 years', '-1 month')),
+            'endDate' => null,
+        ]);
     }
 
     protected function defaults(): array

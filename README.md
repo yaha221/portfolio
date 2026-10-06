@@ -21,7 +21,8 @@ PHP и Composer локально не нужны — всё работает в 
 
 | Сервис | Адрес |
 |---|---|
-| API | http://localhost:8080 |
+| API | http://localhost:8080/api |
+| Документация API (Swagger UI) | http://localhost:8080/api/doc, OpenAPI JSON — `/api/doc.json` |
 | RabbitMQ UI | http://localhost:15672 (app / app) |
 | Mailpit | http://localhost:8025 |
 | PostgreSQL | localhost:5432 (app / app, БД `portfolio`) |

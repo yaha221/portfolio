@@ -17,4 +17,12 @@ class SkillRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Skill::class);
     }
+
+    /**
+     * @return list<Skill>
+     */
+    public function findAllOrdered(): array
+    {
+        return $this->findBy([], ['sortOrder' => 'ASC', 'name' => 'ASC']);
+    }
 }
