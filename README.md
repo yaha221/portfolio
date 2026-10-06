@@ -36,6 +36,16 @@ docker compose logs -f worker                          # логи воркера
 docker compose down                                    # остановить
 ```
 
+## Качество кода
+
+```bash
+docker compose exec php composer lint                  # стиль + PHPStan, перед каждым коммитом
+docker compose exec php composer cs-fix                # автоматически исправить стиль
+```
+
+- PHP-CS-Fixer: наборы `@Symfony`, `@Symfony:risky`, `@PHP8x4Migration`, плюс `declare(strict_types=1)` и строгие сравнения — `backend/.php-cs-fixer.dist.php`
+- PHPStan level 8 с расширениями Symfony и Doctrine — `backend/phpstan.dist.neon`
+
 ## IDE
 
 - VS Code: расширение WSL, затем `code .` из папки проекта в Ubuntu

@@ -4,7 +4,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^3.3",
@@ -69,7 +69,20 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
+        ],
+        "cs-check": "php-cs-fixer check --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "phpstan": "phpstan analyse --memory-limit=1G",
+        "lint": [
+            "@cs-check",
+            "@phpstan"
         ]
+    },
+    "scripts-descriptions": {
+        "cs-check": "Show code style violations without changing files",
+        "cs-fix": "Fix code style in place",
+        "phpstan": "Run static analysis (level 8)",
+        "lint": "Run code style check and static analysis"
     },
     "conflict": {
         "symfony/symfony": "*"

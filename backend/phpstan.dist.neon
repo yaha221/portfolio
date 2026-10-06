@@ -1,0 +1,20 @@
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-symfony/rules.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-doctrine/rules.neon
+
+parameters:
+    level: 8
+    paths:
+        - src/
+        - tests/
+    tmpDir: var/cache/phpstan
+
+    symfony:
+        # Compiled dev container: lets PHPStan know service types and parameters
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+
+    doctrine:
+        # Real entity metadata for checking DQL, repositories and field types
+        objectManagerLoader: tests/object-manager.php
