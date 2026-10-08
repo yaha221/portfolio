@@ -41,6 +41,20 @@ final class PageViewApiTest extends ApiTestCase
         self::assertStringNotContainsString('127.0.0.1', $view->getIpHash());
     }
 
+    public function testLimitsViewsPerAddress(): void
+    {
+        for ($i = 1; $i <= 60; ++$i) {
+            $this->view('/', self::BROWSER);
+        }
+        self::assertResponseStatusCodeSame(202);
+
+        $this->view('/', self::BROWSER);
+
+        $this->assertProblem(429);
+        self::assertResponseHasHeader('Retry-After');
+        self::assertCount(60, $this->transport('async')->queue()->messages(PageViewed::class));
+    }
+
     #[TestWith(['Googlebot/2.1 (+http://www.google.com/bot.html)'])]
     #[TestWith(['Mozilla/5.0 (compatible) HeadlessChrome/140.0'])]
     #[TestWith([''])]

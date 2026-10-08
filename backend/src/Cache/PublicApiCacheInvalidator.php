@@ -50,18 +50,13 @@ final class PublicApiCacheInvalidator implements ResetInterface
         $entityManager = $args->getObjectManager();
         $unitOfWork = $entityManager->getUnitOfWork();
 
+        // A changed many-to-many collection (project <-> technology) schedules its owning entity
+        // for update too, so links are covered here; PublicApiCacheTest guards that assumption
         $changed = [
             ...$unitOfWork->getScheduledEntityInsertions(),
             ...$unitOfWork->getScheduledEntityUpdates(),
             ...$unitOfWork->getScheduledEntityDeletions(),
         ];
-        // Many-to-many changes (project <-> technology) touch only the join table
-        foreach ([...$unitOfWork->getScheduledCollectionUpdates(), ...$unitOfWork->getScheduledCollectionDeletions()] as $collection) {
-            $owner = $collection->getOwner();
-            if (null !== $owner) {
-                $changed[] = $owner;
-            }
-        }
 
         foreach ($changed as $entity) {
             // Metadata name, not $entity::class: a lazy proxy has its own class name

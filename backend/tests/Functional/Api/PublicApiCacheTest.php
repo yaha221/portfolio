@@ -53,6 +53,36 @@ final class PublicApiCacheTest extends ApiTestCase
         self::assertSame(['draft'], array_column($this->getJson('/api/projects')['items'], 'slug'));
     }
 
+    public function testNewRecordIsVisibleImmediately(): void
+    {
+        self::assertSame([], $this->getJson('/api/skills')['items']);
+
+        $this->loginAsAdmin();
+        $this->sendJson('POST', '/api/admin/skills', ['name' => 'PHP', 'category' => 'Backend', 'level' => 5]);
+        $this->client->setServerParameter('HTTP_AUTHORIZATION', '');
+
+        self::assertSame(['PHP'], array_column($this->getJson('/api/skills')['items'], 'name'));
+    }
+
+    public function testChangingOnlyTheTechnologiesOfAProjectRefreshesTheCache(): void
+    {
+        // Only the project <-> technology links change, no project field: the invalidator relies on
+        // Doctrine scheduling the owning project for update in this case
+        $php = TechnologyFactory::createOne(['name' => 'PHP', 'slug' => 'php']);
+        TechnologyFactory::createOne(['name' => 'Symfony', 'slug' => 'symfony']);
+        $project = ProjectFactory::new()->published()->create(['slug' => 'demo', 'title' => 'Demo', 'description' => 'D', 'content' => '', 'repoUrl' => null, 'demoUrl' => null, 'sortOrder' => 0, 'technologies' => [$php]]);
+        $this->getJson('/api/projects/demo');
+
+        $this->loginAsAdmin();
+        $this->sendJson('PUT', '/api/admin/projects/'.$project->getId(), [
+            'slug' => 'demo', 'title' => 'Demo', 'description' => 'D', 'isPublished' => true, 'technologies' => ['symfony'],
+        ]);
+        self::assertResponseIsSuccessful();
+        $this->client->setServerParameter('HTTP_AUTHORIZATION', '');
+
+        self::assertSame(['symfony'], array_column($this->getJson('/api/projects/demo')['technologies'], 'slug'));
+    }
+
     public function testRenamingTechnologyRefreshesCachedProjects(): void
     {
         $php = TechnologyFactory::createOne(['name' => 'PHP', 'slug' => 'php']);

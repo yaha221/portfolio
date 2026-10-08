@@ -66,12 +66,11 @@ final readonly class ThumbnailGenerator
         return $scaled;
     }
 
+    /**
+     * GD writes the alpha channel to WebP as is: transparent PNGs stay transparent (see the tests).
+     */
     private static function toWebp(GdImage $image): string
     {
-        // Keep PNG transparency
-        imagealphablending($image, false);
-        imagesavealpha($image, true);
-
         ob_start();
         $written = imagewebp($image, null, self::WEBP_QUALITY);
         $webp = (string) ob_get_clean();

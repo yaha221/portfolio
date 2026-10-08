@@ -56,8 +56,7 @@ async function remove(project: Project): Promise<void> {
 function onSortOrderChange(project: Project, event: Event): void {
   const value = Number((event.target as HTMLInputElement).value)
   if (Number.isInteger(value) && value >= 0 && value !== project.sortOrder) {
-    // null = leave unchanged (the API's PATCH semantics)
-    void patch(project, { isPublished: null, sortOrder: value })
+    void patch(project, { sortOrder: value })
   }
 }
 
@@ -116,7 +115,7 @@ const updatedAt = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'short'
                   type="button"
                   class="button button--ghost button--small"
                   :disabled="busy && pendingId === project.id"
-                  @click="patch(project, { isPublished: !project.isPublished, sortOrder: null })"
+                  @click="patch(project, { isPublished: !project.isPublished })"
                 >
                   {{ project.isPublished ? 'Снять с публикации' : 'Опубликовать' }}
                 </button>

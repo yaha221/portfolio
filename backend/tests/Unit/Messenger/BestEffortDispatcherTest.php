@@ -19,7 +19,13 @@ final class BestEffortDispatcherTest extends TestCase
         $bus = $this->createStub(MessageBusInterface::class);
         $bus->method('dispatch')->willThrowException(new TransportException('Connection refused'));
         $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())->method('error');
+        // Enough in the log to tell which follow-up work was lost and why
+        $logger->expects(self::once())->method('error')->with(
+            self::stringContains('{message}'),
+            self::callback(static fn (array $context): bool => stdClass::class === $context['message']
+                && 'Connection refused' === $context['error']
+                && $context['exception'] instanceof TransportException),
+        );
 
         new BestEffortDispatcher($bus, $logger)->dispatch(new stdClass());
     }

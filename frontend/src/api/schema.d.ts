@@ -457,13 +457,13 @@ export interface components {
        * @description За сколько последних дней, включая сегодня
        * @default 30
        */
-      days: number
+      days?: number
     }
     PageQuery: {
       /** @default 1 */
-      page: number
+      page?: number
       /** @default 20 */
-      perPage: number
+      perPage?: number
     }
     ExperienceRequest: {
       company: string
@@ -479,9 +479,9 @@ export interface components {
        * @default null
        * @example null
        */
-      endDate: string | null
+      endDate?: string | null
       /** @default  */
-      description: string
+      description?: string
     }
     ProjectRequest: {
       /** @example portfolio */
@@ -493,15 +493,15 @@ export interface components {
        * @description Полное описание в Markdown
        * @default
        */
-      content: string
+      content?: string
       /** @default null */
-      repoUrl: string | null
+      repoUrl?: string | null
       /** @default null */
-      demoUrl: string | null
+      demoUrl?: string | null
       /** @default false */
-      isPublished: boolean
+      isPublished?: boolean
       /** @default 0 */
-      sortOrder: number
+      sortOrder?: number
       /**
        * @description Slug-и существующих технологий
        * @default []
@@ -510,19 +510,19 @@ export interface components {
        *       "symfony"
        *     ]
        */
-      technologies: string[]
+      technologies?: string[]
     }
     ProjectPatchRequest: {
       /**
        * @default null
        * @example true
        */
-      isPublished: boolean | null
+      isPublished?: boolean | null
       /**
        * @default null
        * @example 3
        */
-      sortOrder: number | null
+      sortOrder?: number | null
     }
     SkillRequest: {
       /** @example Symfony */
@@ -532,7 +532,7 @@ export interface components {
       /** @example 5 */
       level: number
       /** @default 0 */
-      sortOrder: number
+      sortOrder?: number
     }
     TechnologyRequest: {
       /** @example Symfony */
@@ -544,7 +544,7 @@ export interface components {
        * @default null
        * @example symfony
        */
-      icon: string | null
+      icon?: string | null
     }
     ContactRequest: {
       /** @example Иван */
@@ -560,7 +560,7 @@ export interface components {
        * @description Ловушка для ботов: скрытое поле формы, должно оставаться пустым
        * @default
        */
-      website: string
+      website?: string
     }
     PageViewRequest: {
       /**
@@ -571,15 +571,15 @@ export interface components {
     }
     ProjectListQuery: {
       /** @default 1 */
-      page: number
+      page?: number
       /** @default 12 */
-      perPage: number
+      perPage?: number
       /**
        * @description Slug технологии: вернуть только проекты с ней
        * @default null
        * @example symfony
        */
-      technology: string | null
+      technology?: string | null
     }
     DailyStat: {
       /**
@@ -626,17 +626,17 @@ export interface components {
       /** @example 404 */
       status: number
       /** @default null */
-      detail: string | null
+      detail?: string | null
       /**
        * @description Ошибки валидации, только для 400/422
        * @default null
        */
-      violations: components['schemas']['Violation'][] | null
+      violations?: components['schemas']['Violation'][] | null
       /**
        * @default about:blank
        * @example about:blank
        */
-      type: string
+      type?: string
     }
     ContactMessageView: {
       id: number

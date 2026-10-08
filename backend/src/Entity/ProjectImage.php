@@ -31,7 +31,7 @@ class ProjectImage
     #[ORM\Column]
     private int $position;
 
-    public function __construct(Project $project, string $path, int $position = 0)
+    public function __construct(Project $project, string $path, int $position)
     {
         $this->project = $project;
         $this->path = $path;

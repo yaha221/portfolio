@@ -69,7 +69,7 @@ docker compose logs -f frontend                        # вывод Vite
 docker compose up -d                                   # поднять стек
 docker compose exec php bin/console doctrine:migrations:migrate
 docker compose exec php bin/console doctrine:fixtures:load   # тестовые данные для разработки (очищает БД)
-docker compose exec php composer test                  # PHPUnit, база portfolio_test создаётся сама
+docker compose exec php composer test                  # все тесты бэкенда, база portfolio_test создаётся сама
 docker compose exec php composer require <package>
 docker compose logs -f worker                          # логи воркера очереди
 docker compose down                                    # остановить
@@ -122,6 +122,29 @@ docker compose restart worker                                      # после 
 ```bash
 docker compose exec php bin/console cache:pool:clear cache.public_api   # сбросить кеш ответов вручную
 ```
+
+## Тесты
+
+| Набор | Где | Что проверяет |
+|---|---|---|
+| Unit | `backend/tests/Unit` | Обработчики очереди, сервисы, кеш, слушатели, сущности — без ядра и БД: репозитории заменены моками, файлы лежат во Flysystem в памяти, почта и Telegram уходят в шпионы из `tests/Support` |
+| Integration | `backend/tests/Integration` | Код, которому нужен контейнер Symfony: фикстуры, репозиторий пользователей, отметка недоставленных сообщений |
+| Functional | `backend/tests/Functional` | Каждый эндпоинт API на тестовой БД: ответы, ошибки problem+json, доступ, лимиты, очередь, сброс кеша, число SQL-запросов |
+| Frontend | `frontend/src/__tests__` | Vitest + Vue Test Utils: API-клиент и токены, composables, роутер (вход, аналитика), формы входа, контактов и проекта, список проектов |
+
+```bash
+docker compose exec php composer test                  # все тесты бэкенда (172)
+docker compose exec php composer test:unit             # только unit, пара секунд
+docker compose exec php composer test:coverage         # покрытие (pcov) → backend/reports/coverage/index.html
+docker compose exec php composer test:mutation         # мутационное тестирование, ~4 мин → backend/reports/mutation.html
+docker compose exec frontend npm run test:coverage     # покрытие фронтенда → frontend/coverage/index.html
+```
+
+**Покрытие.** Бэкенд — 97,7 % строк (фабрики, Story и фикстуры в расчёт не входят). Фронтенд (64 теста) — composables 100 %, API-клиент 91 %, стор авторизации 89 %, роутер 74 %; страницы, где в основном разметка, покрыты меньше, а логика из них (фильтр в URL, автослаг, разбор ошибок) проверена отдельно.
+
+**Мутационное тестирование.** Покрытие говорит только о том, что строка выполнилась. [Infection](https://infection.github.io) вносит в доменный код (`Entity`, `Service`, `Security`, `Cache`, `MessageHandler`, `EventListener`, `Messenger`, `Validation`) маленькие ошибки — меняет `>` на `>=`, убирает вызов, подменяет значение — и проверяет, что какой-то тест это заметит. Сейчас ловится 392 из 409 мутантов (MSI 95,8 %); оставшиеся 17 эквивалентны исходному коду (например, `(string)` у результата, который и так строка, или EXIF-ориентация по умолчанию 1 вместо 0 — обе означают «не поворачивать»). Порог в `infection.json5` — 90 %: если тесты перестанут что-то проверять, команда упадёт. Мутанты на первом прогоне нашли непроверенное сохранение полей при обновлении проекта, очистку cookie при выходе, удаление просроченных refresh-токенов и мёртвый код в сбросе кеша.
+
+Infection работает в один поток: тесты делят Redis и хранилище лимитов, параллельные процессы мешали бы друг другу.
 
 ## Качество кода
 

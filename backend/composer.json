@@ -42,7 +42,8 @@
         "allow-plugins": {
             "php-http/discovery": true,
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "infection/extension-installer": true
         },
         "bump-after-update": true,
         "sort-packages": true
@@ -85,14 +86,20 @@
             "@cs-check",
             "@phpstan"
         ],
-        "test": "phpunit"
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite unit",
+        "test:coverage": "phpunit --coverage-html reports/coverage --coverage-text --only-summary-for-coverage-text",
+        "test:mutation": "infection"
     },
     "scripts-descriptions": {
         "cs-check": "Show code style violations without changing files",
         "cs-fix": "Fix code style in place",
         "phpstan": "Run static analysis (level 8)",
         "lint": "Run code style check and static analysis",
-        "test": "Run PHPUnit (unit and integration, uses the portfolio_test database)"
+        "test": "Run all tests: unit, integration and functional (uses the portfolio_test database)",
+        "test:unit": "Run only the unit tests: no kernel, no database, a few seconds",
+        "test:coverage": "Run all tests with code coverage (pcov); HTML report in reports/coverage",
+        "test:mutation": "Mutation testing of the domain logic (Infection); report in reports/mutation.html"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -107,6 +114,7 @@
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "friendsofphp/php-cs-fixer": "^3.95",
+        "infection/infection": "^0.35.6",
         "league/flysystem-memory": "^3.31",
         "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-doctrine": "^2.0",

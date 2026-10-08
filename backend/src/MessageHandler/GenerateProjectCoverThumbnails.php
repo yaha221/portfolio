@@ -43,6 +43,6 @@ final readonly class GenerateProjectCoverThumbnails
         $project->setCoverThumbnails($thumbnails);
         $this->entityManager->flush();
 
-        $this->storage->delete(array_values(array_diff($previous, $thumbnails)));
+        $this->storage->delete(array_diff($previous, $thumbnails));
     }
 }

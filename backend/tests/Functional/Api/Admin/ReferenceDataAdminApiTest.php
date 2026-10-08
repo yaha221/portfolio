@@ -10,6 +10,7 @@ use App\Factory\ProjectFactory;
 use App\Factory\SkillFactory;
 use App\Factory\TechnologyFactory;
 use App\Tests\Functional\Api\ApiTestCase;
+use DateTimeImmutable;
 use Zenstruck\Foundry\Attribute\ResetDatabase;
 
 /**
@@ -35,6 +36,17 @@ final class ReferenceDataAdminApiTest extends ApiTestCase
         $this->sendJson('DELETE', '/api/admin/technologies/'.$created['id']);
         self::assertResponseStatusCodeSame(204);
         TechnologyFactory::repository()->assert()->empty();
+    }
+
+    public function testTechnologiesAreListedByName(): void
+    {
+        TechnologyFactory::createOne(['name' => 'Vue.js', 'slug' => 'vuedotjs']);
+        TechnologyFactory::createOne(['name' => 'Docker', 'slug' => 'docker', 'icon' => 'docker']);
+
+        $data = $this->getJson('/api/admin/technologies');
+
+        self::assertSame(['Docker', 'Vue.js'], array_column($data['items'], 'name'));
+        self::assertSame(['id', 'name', 'slug', 'icon'], array_keys($data['items'][0]));
     }
 
     public function testTechnologyNameAndSlugAreUnique(): void
@@ -100,6 +112,18 @@ final class ReferenceDataAdminApiTest extends ApiTestCase
         $this->sendJson('DELETE', '/api/admin/experience/'.$created['id']);
         self::assertResponseStatusCodeSame(204);
         ExperienceFactory::repository()->assert()->empty();
+    }
+
+    public function testExperienceIsListedCurrentJobFirstThenNewest(): void
+    {
+        ExperienceFactory::createOne(['company' => 'Old', 'startDate' => new DateTimeImmutable('2018-01-01'), 'endDate' => new DateTimeImmutable('2020-01-01')]);
+        ExperienceFactory::createOne(['company' => 'Current', 'startDate' => new DateTimeImmutable('2023-01-01'), 'endDate' => null]);
+        ExperienceFactory::createOne(['company' => 'Previous', 'startDate' => new DateTimeImmutable('2020-02-01'), 'endDate' => new DateTimeImmutable('2022-12-01')]);
+
+        $data = $this->getJson('/api/admin/experience');
+
+        self::assertSame(['Current', 'Previous', 'Old'], array_column($data['items'], 'company'));
+        self::assertSame([true, false, false], array_column($data['items'], 'isCurrent'));
     }
 
     public function testExperienceDatesAreValidated(): void

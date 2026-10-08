@@ -7,9 +7,7 @@
   "exclude": [],
 
   "compilerOptions": {
-    // Vitest runs in a different environment than the application code.
-    // Adjust lib and types accordingly.
-    "lib": [],
+    // Tests run in jsdom: the app's DOM and ES libs apply (tests also reach every view through the router)
     "types": ["node", "jsdom"],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

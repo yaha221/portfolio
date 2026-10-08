@@ -29,6 +29,8 @@ final class ProjectAdminApiTest extends ApiTestCase
 
     public function testCreatesProject(): void
     {
+        ProjectFactory::createOne(['slug' => 'blog']);
+
         $data = $this->sendJson('POST', '/api/admin/projects', [
             'slug' => 'shop',
             'title' => 'Магазин',
@@ -97,16 +99,58 @@ final class ProjectAdminApiTest extends ApiTestCase
         self::assertSame(['docker', 'php'], array_column($data['technologies'], 'slug'));
     }
 
+    public function testUpdateSavesEveryFieldToTheDatabase(): void
+    {
+        $project = $this->projectWith(['php'], ['slug' => 'shop']);
+
+        $this->sendJson('PUT', '/api/admin/projects/'.$project->getId(), [
+            'slug' => 'web-shop',
+            'title' => 'Интернет-магазин',
+            'description' => 'Новое описание',
+            'content' => '## Новый текст',
+            'repoUrl' => 'https://github.com/example/shop',
+            'demoUrl' => 'https://shop.example.com',
+            'isPublished' => true,
+            'sortOrder' => 4,
+            'technologies' => ['vue'],
+        ]);
+        self::assertResponseIsSuccessful();
+
+        $saved = $this->reload($project);
+        self::assertSame(
+            ['web-shop', 'Интернет-магазин', 'Новое описание', '## Новый текст', 'https://github.com/example/shop', 'https://shop.example.com', true, 4],
+            [$saved->getSlug(), $saved->getTitle(), $saved->getDescription(), $saved->getContent(), $saved->getRepoUrl(), $saved->getDemoUrl(), $saved->isPublished(), $saved->getSortOrder()],
+        );
+        self::assertSame(['vue'], $saved->getTechnologies()->map(static fn ($technology) => $technology->getSlug())->getValues());
+    }
+
+    public function testUpdateRejectsTheSlugOfAnotherProject(): void
+    {
+        ProjectFactory::createOne(['slug' => 'blog']);
+        $project = ProjectFactory::createOne(['slug' => 'shop']);
+
+        $this->sendJson('PUT', '/api/admin/projects/'.$project->getId(), ['slug' => 'blog', 'title' => 'T', 'description' => 'D']);
+
+        self::assertSame(['slug'], $this->assertViolations());
+        self::assertSame('shop', $this->reload($project)->getSlug());
+    }
+
     public function testPatchChangesOnlyGivenFields(): void
     {
         $project = ProjectFactory::createOne(['sortOrder' => 5, 'title' => 'Черновик']);
+        $uri = '/api/admin/projects/'.$project->getId();
 
-        $data = $this->sendJson('PATCH', '/api/admin/projects/'.$project->getId(), ['isPublished' => true]);
+        $data = $this->sendJson('PATCH', $uri, ['isPublished' => true]);
 
         self::assertResponseIsSuccessful();
         self::assertTrue($data['isPublished']);
         self::assertSame(5, $data['sortOrder']);
         self::assertSame('Черновик', $data['title']);
+
+        $data = $this->sendJson('PATCH', $uri, ['sortOrder' => 7]);
+
+        self::assertSame([7, true], [$data['sortOrder'], $data['isPublished']]);
+        self::assertSame(7, $this->reload($project)->getSortOrder());
     }
 
     public function testPublishingNotifiesOnlyOnTheDraftToPublishedTransition(): void
@@ -147,6 +191,17 @@ final class ProjectAdminApiTest extends ApiTestCase
 
         self::assertSame(['live', 'draft'], array_column($data['items'], 'slug'));
         self::assertSame([true, false], array_column($data['items'], 'isPublished'));
+    }
+
+    public function testShowsDraftForEditing(): void
+    {
+        // The public API hides drafts; the admin needs them to edit before publishing
+        $draft = ProjectFactory::createOne(['slug' => 'draft', 'title' => 'Черновик', 'content' => '## Текст']);
+
+        $data = $this->getJson('/api/admin/projects/'.$draft->getId());
+
+        self::assertSame($draft->getId(), $data['id']);
+        self::assertSame(['draft', 'Черновик', '## Текст', false], [$data['slug'], $data['title'], $data['content'], $data['isPublished']]);
     }
 
     public function testUnknownProjectIsNotFound(): void
@@ -190,6 +245,18 @@ final class ProjectAdminApiTest extends ApiTestCase
         );
 
         return ProjectFactory::createOne([...$attributes, 'technologies' => $technologies]);
+    }
+
+    /**
+     * Fresh from the database: the response alone would not show a missing flush.
+     */
+    private function reload(Project $project): Project
+    {
+        self::getContainer()->get('doctrine')->getManager()->clear();
+        $reloaded = ProjectFactory::repository()->find($project->getId());
+        self::assertNotNull($reloaded);
+
+        return $reloaded;
     }
 
     private function uploads(): FilesystemOperator

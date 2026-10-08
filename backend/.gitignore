@@ -26,3 +26,7 @@
 ###> uploads ###
 /public/uploads/
 ###< uploads ###
+
+###> test reports (coverage, mutation testing) ###
+/reports/
+###< test reports ###

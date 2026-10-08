@@ -16,5 +16,9 @@ final class UserTest extends TestCase
 
         $user->setRoles(['ROLE_ADMIN', 'ROLE_USER']);
         self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $user->getRoles());
+
+        // A duplicate in the middle must not leave a gap in the keys: Symfony expects a list
+        $user->setRoles(['ROLE_ADMIN', 'ROLE_ADMIN']);
+        self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $user->getRoles());
     }
 }

@@ -44,6 +44,6 @@ final readonly class GenerateProjectImageThumbnails
         $this->entityManager->flush();
 
         // Same names are overwritten in place; anything else left from an earlier size set goes
-        $this->storage->delete(array_values(array_diff($previous, $thumbnails)));
+        $this->storage->delete(array_diff($previous, $thumbnails));
     }
 }

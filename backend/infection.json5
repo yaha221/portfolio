@@ -1,0 +1,34 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    // Mutation testing of the domain logic: does a small bug in the code make some test fail?
+    // Controllers, DTOs and OpenAPI attributes are thin glue checked by the functional tests.
+    "source": {
+        "directories": [
+            "src/Cache",
+            "src/Entity",
+            "src/EventListener",
+            "src/MessageHandler",
+            "src/Messenger",
+            "src/Security",
+            "src/Service",
+            "src/Validation"
+        ]
+    },
+    // One process: the tests share Redis and the rate limiter storage, parallel runs would collide
+    "threads": 1,
+    "timeout": 30,
+    "tmpDir": "var/infection",
+    // reports/ is in the bind mount: open reports/mutation.html from the host
+    "logs": {
+        "text": "reports/mutation.log",
+        "html": "reports/mutation.html",
+        "summary": "reports/mutation-summary.log"
+    },
+    "mutators": {
+        "@default": true
+    },
+    // The survivors left are equivalent mutants (same behaviour, e.g. a cast that can't change a string);
+    // a drop below these numbers means some test stopped checking a result
+    "minMsi": 90,
+    "minCoveredMsi": 90
+}

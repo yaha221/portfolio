@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api;
 
+use App\Entity\RefreshToken;
 use App\Factory\UserFactory;
 use App\Repository\RefreshTokenRepository;
 use App\Security\RefreshTokenManager;
+use DateTimeImmutable;
 use Symfony\Component\BrowserKit\Cookie;
 use Zenstruck\Foundry\Attribute\ResetDatabase;
 
@@ -37,6 +39,31 @@ final class AuthApiTest extends ApiTestCase
         self::assertTrue($cookies[0]->isHttpOnly());
         self::assertTrue($cookies[0]->isSecure());
         self::assertSame('strict', $cookies[0]->getSameSite());
+        // 256 random bits, hex-encoded
+        self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', (string) $cookies[0]->getValue());
+    }
+
+    public function testLoginRemovesOnlyTheUsersExpiredTokens(): void
+    {
+        $admin = UserFactory::repository()->findOneBy(['email' => self::EMAIL]);
+        $other = UserFactory::createOne();
+        self::assertNotNull($admin);
+        $entityManager = self::getContainer()->get('doctrine')->getManager();
+        $entityManager->persist(new RefreshToken($admin, str_repeat('a', 64), new DateTimeImmutable('-1 day')));
+        $entityManager->persist(new RefreshToken($admin, str_repeat('b', 64), new DateTimeImmutable('+1 day')));
+        $entityManager->persist(new RefreshToken($other, str_repeat('c', 64), new DateTimeImmutable('-1 day')));
+        $entityManager->flush();
+
+        $this->login();
+
+        $hashes = array_map(
+            static fn (RefreshToken $token) => $token->getTokenHash(),
+            self::getContainer()->get(RefreshTokenRepository::class)->findAll(),
+        );
+        self::assertNotContains(str_repeat('a', 64), $hashes);
+        self::assertContains(str_repeat('b', 64), $hashes, 'A valid token from another device keeps working');
+        self::assertContains(str_repeat('c', 64), $hashes, 'Other users are cleaned up on their own login');
+        self::assertCount(3, $hashes);
     }
 
     public function testRefreshTokenIsStoredOnlyAsHash(): void
@@ -47,6 +74,14 @@ final class AuthApiTest extends ApiTestCase
         $tokens = self::getContainer()->get(RefreshTokenRepository::class);
         self::assertNull($tokens->findOneBy(['tokenHash' => $token]));
         self::assertNotNull($tokens->findOneBy(['tokenHash' => hash('sha256', $token)]));
+    }
+
+    public function testLoginNeedsJson(): void
+    {
+        $this->client->request('POST', '/api/auth/login', ['email' => self::EMAIL, 'password' => 'password']);
+
+        self::assertSame('Invalid JSON.', $this->assertProblem(400)['detail']);
+        self::assertResponseNotHasCookie(RefreshTokenManager::COOKIE_NAME, '/api/auth');
     }
 
     public function testWrongPasswordIsUnauthorized(): void
@@ -88,6 +123,13 @@ final class AuthApiTest extends ApiTestCase
         $this->client->request('POST', '/api/auth/logout');
         self::assertResponseStatusCodeSame(204);
         self::assertSame(0, self::getContainer()->get(RefreshTokenRepository::class)->count([]));
+
+        // The browser drops the cookie only if path and flags match the ones it was set with
+        $cleared = $this->client->getResponse()->headers->getCookies();
+        self::assertCount(1, $cleared);
+        self::assertSame(RefreshTokenManager::COOKIE_NAME, $cleared[0]->getName());
+        self::assertTrue($cleared[0]->isCleared());
+        self::assertSame(['/api/auth', true, true, 'strict'], [$cleared[0]->getPath(), $cleared[0]->isSecure(), $cleared[0]->isHttpOnly(), $cleared[0]->getSameSite()]);
 
         $this->setRefreshCookie($token);
         $this->client->request('POST', '/api/auth/refresh');
