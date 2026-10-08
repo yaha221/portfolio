@@ -2,6 +2,12 @@ framework:
     messenger:
         failure_transport: failed
 
+        buses:
+            messenger.bus.default:
+                middleware:
+                    # The worker lives for an hour: reconnect if PostgreSQL dropped the idle connection
+                    - doctrine_ping_connection
+
         transports:
             # https://symfony.com/doc/current/messenger.html#transport-configuration
             async:
@@ -10,23 +16,22 @@ framework:
                     max_retries: 3
                     delay: 1000
                     multiplier: 3
-            # Messages that exhausted retries; inspect with messenger:failed:show, replay with messenger:failed:retry
-            failed:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-                options:
-                    exchange:
-                        name: failed
-                        type: fanout
-                    queues:
-                        failed: ~
+            # Messages that exhausted retries. PostgreSQL, not RabbitMQ: only a listable transport lets
+            # messenger:failed:show / retry / remove work on single messages by id. Table comes from a migration.
+            failed: 'doctrine://default?queue_name=failed&auto_setup=0'
 
         routing:
-            Symfony\Component\Mailer\Messenger\SendEmailMessage: async
-            # 'App\Message\YourMessage': async
+            # Everything slow or unreliable runs in the worker; emails and chat messages
+            # are then sent synchronously from inside those handlers
+            App\Message\ContactMessageReceived: async
+            App\Message\ProjectImageUploaded: async
+            App\Message\ProjectPublished: async
+            App\Message\PageViewed: async
 
 when@test:
     framework:
         messenger:
             transports:
-                async: 'in-memory://'
-                failed: 'in-memory://'
+                # zenstruck/messenger-test: inspect and process queued messages from tests
+                async: 'test://'
+                failed: 'test://'

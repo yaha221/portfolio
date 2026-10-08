@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 // Public listing: WHERE is_published ORDER BY sort_order
@@ -60,12 +61,12 @@ class Project
 
     /** @var Collection<int, Technology> */
     #[ORM\ManyToMany(targetEntity: Technology::class)]
-    #[ORM\OrderBy(['name' => 'ASC'])]
+    #[ORM\OrderBy(['name' => SortDirection::Ascending])]
     private Collection $technologies;
 
     /** @var Collection<int, ProjectImage> */
     #[ORM\OneToMany(targetEntity: ProjectImage::class, mappedBy: 'project', cascade: ['persist'], orphanRemoval: true)]
-    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[ORM\OrderBy(['position' => SortDirection::Ascending])]
     private Collection $images;
 
     public function __construct(string $slug, string $title, string $description)

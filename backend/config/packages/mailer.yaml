@@ -1,3 +1,13 @@
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'
+        envelope:
+            sender: '%env(MAILER_FROM)%'
+        headers:
+            From: '%env(MAILER_FROM)%'
+
+when@test:
+    framework:
+        mailer:
+            # Never reach Mailpit from tests; sent emails are still collected for assertEmailCount()
+            dsn: 'null://null'

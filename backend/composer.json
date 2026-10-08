@@ -19,18 +19,21 @@
         "symfony/amqp-messenger": "7.4.*",
         "symfony/asset": "7.4.*",
         "symfony/console": "7.4.*",
+        "symfony/doctrine-messenger": "7.4.*",
         "symfony/dotenv": "7.4.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.4.*",
         "symfony/mailer": "7.4.*",
         "symfony/messenger": "7.4.*",
         "symfony/monolog-bundle": "^4.1",
+        "symfony/notifier": "7.4.*",
         "symfony/property-access": "7.4.*",
         "symfony/property-info": "7.4.*",
         "symfony/rate-limiter": "7.4.*",
         "symfony/runtime": "7.4.*",
         "symfony/security-bundle": "7.4.*",
         "symfony/serializer": "7.4.*",
+        "symfony/telegram-notifier": "7.4.*",
         "symfony/uid": "7.4.*",
         "symfony/validator": "7.4.*",
         "symfony/yaml": "7.4.*"
@@ -115,6 +118,7 @@
         "symfony/maker-bundle": "^1.68",
         "symfony/stopwatch": "7.4.*",
         "symfony/web-profiler-bundle": "7.4.*",
-        "zenstruck/foundry": "^2.13"
+        "zenstruck/foundry": "^2.13",
+        "zenstruck/messenger-test": "^1.15"
     }
 }

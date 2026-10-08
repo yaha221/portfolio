@@ -8,6 +8,8 @@ use App\Dto\Response\Admin\AdminProjectImageView;
 use App\Dto\Response\Admin\AdminProjectView;
 use App\Entity\Project;
 use App\Entity\ProjectImage;
+use App\Message\ProjectImageUploaded;
+use App\Messenger\BestEffortDispatcher;
 use App\OpenApi\ImageUploadBody;
 use App\OpenApi\ProblemResponse;
 use App\Service\UploadStorage;
@@ -47,13 +49,14 @@ final class ProjectMediaAdminController extends AbstractController
         private readonly UploadStorage $storage,
         private readonly UploadUrlGenerator $uploads,
         private readonly EntityManagerInterface $entityManager,
+        private readonly BestEffortDispatcher $dispatcher,
     ) {
     }
 
     #[Route('/images', name: 'image_add', methods: ['POST'])]
     #[OA\Post(summary: 'Добавить картинку в галерею')]
     #[ImageUploadBody]
-    #[OA\Response(response: 201, description: 'Картинка добавлена в конец галереи', content: new OA\JsonContent(ref: new Model(type: AdminProjectImageView::class)))]
+    #[OA\Response(response: 201, description: 'Картинка добавлена в конец галереи; превью появятся, когда их сделает воркер', content: new OA\JsonContent(ref: new Model(type: AdminProjectImageView::class)))]
     #[ProblemResponse(422, 'Нет файла, это не картинка или файл больше 10 МБ')]
     public function addImage(
         Project $project,
@@ -69,6 +72,8 @@ final class ProjectMediaAdminController extends AbstractController
 
             throw $exception;
         }
+
+        $this->dispatcher->dispatch(new ProjectImageUploaded((int) $image->getId()));
 
         return $this->json(AdminProjectImageView::fromEntity($image, $this->uploads), Response::HTTP_CREATED);
     }

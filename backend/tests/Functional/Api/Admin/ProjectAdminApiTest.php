@@ -7,13 +7,17 @@ namespace App\Tests\Functional\Api\Admin;
 use App\Entity\Project;
 use App\Factory\ProjectFactory;
 use App\Factory\TechnologyFactory;
+use App\Message\ProjectPublished;
 use App\Tests\Functional\Api\ApiTestCase;
 use League\Flysystem\FilesystemOperator;
 use Zenstruck\Foundry\Attribute\ResetDatabase;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 #[ResetDatabase]
 final class ProjectAdminApiTest extends ApiTestCase
 {
+    use InteractsWithMessenger;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -103,6 +107,35 @@ final class ProjectAdminApiTest extends ApiTestCase
         self::assertTrue($data['isPublished']);
         self::assertSame(5, $data['sortOrder']);
         self::assertSame('Черновик', $data['title']);
+    }
+
+    public function testPublishingNotifiesOnlyOnTheDraftToPublishedTransition(): void
+    {
+        $project = ProjectFactory::createOne(['slug' => 'shop', 'title' => 'Магазин']);
+        $uri = '/api/admin/projects/'.$project->getId();
+
+        $this->sendJson('PATCH', $uri, ['isPublished' => true]);
+        $this->sendJson('PATCH', $uri, ['sortOrder' => 7]);
+        $this->sendJson('PATCH', $uri, ['isPublished' => true]);
+
+        $queued = $this->transport('async')->queue()->messages(ProjectPublished::class);
+        self::assertCount(1, $queued);
+        self::assertSame($project->getId(), $queued[0]->projectId);
+
+        $this->transport('async')->process();
+
+        self::assertNotificationCount(1);
+        $notification = self::getNotifierMessage();
+        self::assertNotNull($notification);
+        self::assertNotificationSubjectContains($notification, 'http://localhost:5173/projects/shop');
+    }
+
+    public function testCreatingPublishedProjectNotifiesButDraftDoesNot(): void
+    {
+        $this->sendJson('POST', '/api/admin/projects', ['slug' => 'live', 'title' => 'T', 'description' => 'D', 'isPublished' => true]);
+        $this->sendJson('POST', '/api/admin/projects', ['slug' => 'draft', 'title' => 'T', 'description' => 'D']);
+
+        $this->transport('async')->queue()->assertContains(ProjectPublished::class, 1);
     }
 
     public function testListIncludesDrafts(): void

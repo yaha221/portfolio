@@ -8,6 +8,7 @@ use App\Entity\ContactMessage;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<ContactMessage>
@@ -27,8 +28,8 @@ class ContactMessageRepository extends ServiceEntityRepository
     public function findPage(int $page, int $perPage): Paginator
     {
         $query = $this->createQueryBuilder('m')
-            ->orderBy('m.createdAt', 'DESC')
-            ->addOrderBy('m.id', 'DESC')
+            ->orderBy('m.createdAt', SortDirection::Descending)
+            ->addOrderBy('m.id', SortDirection::Descending)
             ->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage)
             ->getQuery();

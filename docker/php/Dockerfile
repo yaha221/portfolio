@@ -9,6 +9,7 @@ RUN install-php-extensions \
         opcache \
         zip \
         gd \
+        exif \
         amqp \
     && apk add --no-cache bash git
 

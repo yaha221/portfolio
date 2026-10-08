@@ -6,14 +6,18 @@ namespace App\Tests\Functional\Api\Admin;
 
 use App\Entity\Project;
 use App\Factory\ProjectFactory;
+use App\Message\ProjectImageUploaded;
 use App\Tests\Functional\Api\ApiTestCase;
 use League\Flysystem\FilesystemOperator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Zenstruck\Foundry\Attribute\ResetDatabase;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 #[ResetDatabase]
 final class ProjectMediaAdminApiTest extends ApiTestCase
 {
+    use InteractsWithMessenger;
+
     // 1×1 PNG
     private const string PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
     private const string UPLOADS_URL = 'http://localhost:8080/uploads/';
@@ -40,6 +44,22 @@ final class ProjectMediaAdminApiTest extends ApiTestCase
         self::assertMatchesRegularExpression('#^'.self::UPLOADS_URL.'projects/[0-9a-f-]{36}\.png$#', $first['url']);
         self::assertTrue($this->uploads()->fileExists($this->pathOf($first['url'])));
         self::assertCount(2, $this->reloadProject()->getImages());
+    }
+
+    public function testWorkerAddsThumbnailsToUploadedImage(): void
+    {
+        $this->upload('/images', $this->png());
+        $this->transport('async')->queue()->assertContains(ProjectImageUploaded::class, 1);
+
+        $this->transport('async')->process();
+
+        $image = $this->reloadProject()->getImages()->first();
+        self::assertNotFalse($image);
+        // JSONB keeps its own key order
+        self::assertEqualsCanonicalizing(['small', 'large'], array_keys($image->getThumbnails()));
+        foreach ($image->getThumbnails() as $path) {
+            self::assertTrue($this->uploads()->fileExists($path));
+        }
     }
 
     public function testRejectsFileThatIsNotAnImage(): void

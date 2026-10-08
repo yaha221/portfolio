@@ -51,6 +51,33 @@ docker compose logs -f worker                          # логи воркера
 docker compose down                                    # остановить
 ```
 
+## Очереди (RabbitMQ + Symfony Messenger)
+
+Всё медленное и ненадёжное выполняет контейнер `worker`; API только сохраняет данные и ставит задачу в очередь.
+
+| Событие | Откуда | Что делает воркер |
+|---|---|---|
+| `ContactMessageReceived` | `POST /api/contact` (202) | Письмо админу (Reply-To — посетитель), автоответ посетителю, сообщение в Telegram |
+| `ProjectImageUploaded` | загрузка картинки в галерею | WebP-превью 480 и 1280 px по ширине, с учётом EXIF-поворота |
+| `ProjectPublished` | черновик → опубликован | Сообщение в Telegram со ссылкой на проект |
+| `PageViewed` | `POST /api/page-views` от SPA (202) | Запись просмотра; статистика — `GET /api/admin/analytics` |
+
+- Каждый обработчик независим: при сбое повторяется только упавший (3 повтора: через 1, 3 и 9 секунд).
+- Письма в разработке ловит Mailpit: http://localhost:8025.
+- Telegram по умолчанию выключен (`TELEGRAM_DSN=null://null`). Чтобы включить, добавьте в `backend/.env.local`:
+  `TELEGRAM_DSN=telegram://<токен бота>@default?channel=<chat id>` и перезапустите `php` и `worker`.
+- Если RabbitMQ недоступен, запрос всё равно выполняется (данные сохранены), ошибка пишется в лог.
+
+Сообщения, исчерпавшие повторы, лежат в PostgreSQL (`messenger_messages`, очередь `failed`). Сообщение формы, письмо по которому так и не ушло, получает статус `failed` в админке.
+
+```bash
+docker compose exec php bin/console messenger:stats                # сколько сообщений в очередях
+docker compose exec php bin/console messenger:failed:show          # неудачные сообщения с текстом ошибки
+docker compose exec php bin/console messenger:failed:retry <id>    # повторить одно (без id — все по очереди)
+docker compose exec php bin/console messenger:failed:remove <id>   # удалить
+docker compose restart worker                                      # после изменения кода обработчиков
+```
+
 ## Качество кода
 
 ```bash

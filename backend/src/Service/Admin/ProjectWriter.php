@@ -8,6 +8,8 @@ use App\Dto\Request\Admin\ProjectPatchRequest;
 use App\Dto\Request\Admin\ProjectRequest;
 use App\Entity\Project;
 use App\Entity\Technology;
+use App\Message\ProjectPublished;
+use App\Messenger\BestEffortDispatcher;
 use App\Repository\ProjectRepository;
 use App\Repository\TechnologyRepository;
 use App\Validation\InvalidRequest;
@@ -22,6 +24,7 @@ final readonly class ProjectWriter
         private EntityManagerInterface $entityManager,
         private ProjectRepository $projects,
         private TechnologyRepository $technologies,
+        private BestEffortDispatcher $dispatcher,
     ) {
     }
 
@@ -33,7 +36,7 @@ final readonly class ProjectWriter
         $this->apply($project, $request);
 
         $this->entityManager->persist($project);
-        $this->entityManager->flush();
+        $this->save($project, wasPublished: false);
 
         return $project;
     }
@@ -41,17 +44,20 @@ final readonly class ProjectWriter
     public function update(Project $project, ProjectRequest $request): void
     {
         $this->assertSlugIsFree($request->slug, $project);
+        $wasPublished = $project->isPublished();
 
         $project->setSlug($request->slug);
         $project->setTitle($request->title);
         $project->setDescription($request->description);
         $this->apply($project, $request);
 
-        $this->entityManager->flush();
+        $this->save($project, $wasPublished);
     }
 
     public function patch(Project $project, ProjectPatchRequest $request): void
     {
+        $wasPublished = $project->isPublished();
+
         if (null !== $request->isPublished) {
             $request->isPublished ? $project->publish() : $project->unpublish();
         }
@@ -59,7 +65,17 @@ final readonly class ProjectWriter
             $project->setSortOrder($request->sortOrder);
         }
 
+        $this->save($project, $wasPublished);
+    }
+
+    private function save(Project $project, bool $wasPublished): void
+    {
         $this->entityManager->flush();
+
+        // Only the draft -> published transition; editing a published project notifies nobody
+        if (!$wasPublished && $project->isPublished()) {
+            $this->dispatcher->dispatch(new ProjectPublished((int) $project->getId()));
+        }
     }
 
     private function apply(Project $project, ProjectRequest $request): void

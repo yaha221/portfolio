@@ -1,0 +1,12 @@
+framework:
+    rate_limiter:
+        # POST /api/contact: per client IP
+        contact_form:
+            policy: sliding_window
+            limit: 3
+            interval: '10 minutes'
+        # POST /api/page-views: per client IP, generous for normal browsing
+        page_views:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'

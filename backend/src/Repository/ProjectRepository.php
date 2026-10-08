@@ -8,6 +8,7 @@ use App\Entity\Project;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<Project>
@@ -30,8 +31,8 @@ class ProjectRepository extends ServiceEntityRepository
             ->addSelect('t')
             ->leftJoin('p.technologies', 't')
             ->where('p.isPublished = true')
-            ->orderBy('p.sortOrder', 'ASC')
-            ->addOrderBy('p.id', 'ASC')
+            ->orderBy('p.sortOrder', SortDirection::Ascending)
+            ->addOrderBy('p.id', SortDirection::Ascending)
             ->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage);
 
@@ -60,8 +61,8 @@ class ProjectRepository extends ServiceEntityRepository
             ->addSelect('t', 'i')
             ->leftJoin('p.technologies', 't')
             ->leftJoin('p.images', 'i')
-            ->orderBy('p.sortOrder', 'ASC')
-            ->addOrderBy('p.id', 'ASC')
+            ->orderBy('p.sortOrder', SortDirection::Ascending)
+            ->addOrderBy('p.id', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
