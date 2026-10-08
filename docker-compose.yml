@@ -42,6 +42,24 @@ services:
     depends_on:
       - php
 
+  # Vue SPA dev server (Vite, hot reload) on http://localhost:5173; proxies /api and /uploads to nginx,
+  # so the browser sees one origin and the refresh-token cookie needs no CORS
+  frontend:
+    image: node:24-alpine
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    command: ["sh", "-c", "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0"]
+    environment:
+      npm_config_cache: /tmp/.npm
+      npm_config_update_notifier: "false"
+      API_PROXY_TARGET: http://nginx
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - nginx
+
   database:
     image: postgres:17-alpine
     environment:

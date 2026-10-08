@@ -1,7 +1,7 @@
 # Портфолио
 
 Backend: Symfony 7.4 (REST, ручные контроллеры) + PostgreSQL 17 + RabbitMQ (Symfony Messenger).
-Frontend: отдельный SPA на Vue 3 (`frontend/`, будет позже). Файлы — на локальном диске.
+Frontend: отдельный SPA на Vue 3 + TypeScript (`frontend/`), публичный сайт и админка в одном приложении. Файлы — на локальном диске.
 
 ## Требования
 
@@ -21,6 +21,7 @@ PHP и Composer локально не нужны — всё работает в 
 
 | Сервис | Адрес |
 |---|---|
+| Сайт (Vite dev server) | http://localhost:5173, админка — `/admin` |
 | API | http://localhost:8080/api |
 | Документация API (Swagger UI) | http://localhost:8080/api/doc, OpenAPI JSON — `/api/doc.json` |
 | RabbitMQ UI | http://localhost:15672 (app / app) |
@@ -33,11 +34,34 @@ PHP и Composer локально не нужны — всё работает в 
 
 1. `POST /api/auth/login` с `{"email", "password"}` → `{"token", "expiresIn": 900}` и httpOnly-cookie `refresh_token` (30 дней, только для `/api/auth`).
 2. Запросы к `/api/admin/*` — с заголовком `Authorization: Bearer <token>`.
-3. Когда токен истёк — `POST /api/auth/refresh` (SPA шлёт cookie через `credentials: 'include'`). Refresh-токен одноразовый: приходит новая cookie.
+3. Когда токен истёк — `POST /api/auth/refresh`, cookie браузер отправит сам (SPA и API на одном origin). Refresh-токен одноразовый: приходит новая cookie.
 4. `POST /api/auth/logout` отзывает refresh-токен.
 
 В базе хранится только SHA-256 refresh-токена. После 5 неудачных входов за 15 минут — 429.
 Загруженные картинки лежат в `backend/public/uploads` (не в Git), nginx отдаёт их по `/uploads/...`.
+
+## Frontend (SPA)
+
+Vue 3 + TypeScript, Vite, Vue Router, Pinia. Контейнер `frontend` при старте ставит зависимости и запускает Vite на http://localhost:5173. Vite проксирует `/api` и `/uploads` в nginx, поэтому для браузера SPA и API — один origin: без CORS, refresh-cookie с `SameSite=Strict` работает.
+
+| Раздел | Адрес |
+|---|---|
+| Главная, проекты, проект | `/`, `/projects` (фильтр `?technology=`, страницы `?page=`), `/projects/{slug}` |
+| Обо мне, контакты | `/about`, `/contact` |
+| Админка | `/admin` (вход — `/admin/login`): проекты с картинками, технологии, навыки, опыт, сообщения, аналитика |
+
+- **Клиент API** — `openapi-fetch` с типами, сгенерированными из OpenAPI бэкенда (`src/api/schema.d.ts`). После изменения API перегенерируйте типы: `vue-tsc` сразу покажет, что сломалось.
+- **Авторизация.** Access-токен хранится только в памяти; после перезагрузки страницы сессия восстанавливается через refresh-cookie. `adminCall()` подставляет токен, при 401 один раз обновляет его и повторяет запрос, без сессии — уводит на вход.
+- **Ошибки API** (RFC 9457) превращаются в `ApiError`; 422 раскладывается по полям формы.
+- **Аналитика.** При каждом переходе SPA отправляет `POST /api/page-views` (кроме `/admin`).
+- **Тексты о себе** — `src/config/site.ts`; иконки технологий — с CDN Simple Icons по полю `icon`.
+
+```bash
+docker compose exec frontend npm run api:types         # перегенерировать типы из /api/doc.json
+docker compose exec frontend npm run verify            # oxlint, ESLint, Prettier, vue-tsc, Vitest
+docker compose exec frontend npm install <package>
+docker compose logs -f frontend                        # вывод Vite
+```
 
 ## Полезные команды
 
@@ -102,9 +126,13 @@ docker compose exec php bin/console cache:pool:clear cache.public_api   # сбр
 ## Качество кода
 
 ```bash
-docker compose exec php composer lint                  # стиль + PHPStan (то же запускает pre-commit хук)
+docker compose exec php composer lint                  # стиль + PHPStan
 docker compose exec php composer cs-fix                # автоматически исправить стиль
+docker compose exec frontend npm run verify            # проверки фронтенда
+docker compose exec frontend npm run format            # Prettier для src/
 ```
+
+Pre-commit хук (`.githooks`, подключает `setup.sh`) запускает `composer lint`, если в коммите есть PHP-код, и `npm run verify`, если есть файлы `frontend/`.
 
 - PHP-CS-Fixer: наборы `@Symfony`, `@Symfony:risky`, `@PHP8x4Migration`, плюс `declare(strict_types=1)` и строгие сравнения — `backend/.php-cs-fixer.dist.php`
 - PHPStan level 8 с расширениями Symfony и Doctrine — `backend/phpstan.dist.neon`
@@ -118,6 +146,6 @@ docker compose exec php composer cs-fix                # автоматичес�
 
 ```
 backend/       Symfony API
-frontend/      SPA (позже)
+frontend/      SPA на Vue 3 (публичный сайт + админка)
 docker/        Dockerfile php, конфиг nginx
 ```

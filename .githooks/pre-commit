@@ -1,16 +1,25 @@
 #!/usr/bin/env sh
-# Runs code style check and PHPStan before a commit that touches backend PHP code.
+# Runs linters, static analysis and frontend tests before a commit, for the parts it touches:
+# backend PHP code -> composer lint (code style + PHPStan), frontend -> npm run verify.
 # Checks the working tree, not only staged changes. Skip once with `git commit --no-verify`.
 set -e
 cd "$(git rev-parse --show-toplevel)"
 
-if ! git diff --cached --name-only --diff-filter=ACMR | grep -qE '^backend/(.*\.php|.*\.neon|composer\.(json|lock))$'; then
-    exit 0
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+require_running() {
+    if ! docker compose ps --status running --services 2>/dev/null | grep -qx "$1"; then
+        echo "pre-commit: $1 container is not running, start it with 'docker compose up -d'" >&2
+        exit 1
+    fi
+}
+
+if echo "$staged" | grep -qE '^backend/(.*\.php|.*\.neon|composer\.(json|lock))$'; then
+    require_running php
+    docker compose exec -T php composer lint
 fi
 
-if ! docker compose ps --status running --services 2>/dev/null | grep -qx php; then
-    echo "pre-commit: php container is not running, start it with 'docker compose up -d'" >&2
-    exit 1
+if echo "$staged" | grep -qE '^frontend/'; then
+    require_running frontend
+    docker compose exec -T frontend npm run verify
 fi
-
-docker compose exec -T php composer lint
