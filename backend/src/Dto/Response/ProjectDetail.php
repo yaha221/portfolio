@@ -12,6 +12,7 @@ use OpenApi\Attributes as OA;
 final readonly class ProjectDetail
 {
     /**
+     * @param array<string, string>  $coverThumbnails
      * @param list<TechnologyRef>    $technologies
      * @param list<ProjectImageView> $images
      */
@@ -24,6 +25,8 @@ final readonly class ProjectDetail
         #[OA\Property(description: 'Полное описание в Markdown')]
         public string $content,
         public ?string $coverImageUrl,
+        #[OA\Property(description: 'Превью обложки: размер => URL', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'string'))]
+        public array $coverThumbnails,
         public ?string $repoUrl,
         public ?string $demoUrl,
         public array $technologies,
@@ -45,6 +48,7 @@ final readonly class ProjectDetail
             $project->getDescription(),
             $project->getContent(),
             null === $cover ? null : $uploads->url($cover),
+            array_map($uploads->url(...), $project->getCoverThumbnails()),
             $project->getRepoUrl(),
             $project->getDemoUrl(),
             TechnologyRef::listOf($project->getTechnologies()),

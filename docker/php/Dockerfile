@@ -11,6 +11,7 @@ RUN install-php-extensions \
         gd \
         exif \
         amqp \
+        redis \
     && apk add --no-cache bash git
 
 ENV COMPOSER_HOME=/tmp/composer

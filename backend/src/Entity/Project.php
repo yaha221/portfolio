@@ -13,8 +13,8 @@ use Doctrine\ORM\Mapping as ORM;
 use SortDirection;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
-// Public listing: WHERE is_published ORDER BY sort_order
-#[ORM\Index(name: 'project_published_sort_idx', columns: ['is_published', 'sort_order'])]
+// Public listing: WHERE is_published ORDER BY sort_order, id LIMIT n is read straight from this partial index
+#[ORM\Index(name: 'project_published_order_idx', columns: ['sort_order', 'id'], options: ['where' => 'is_published'])]
 #[ORM\HasLifecycleCallbacks]
 class Project
 {
@@ -40,6 +40,10 @@ class Project
     // Path relative to the uploads directory
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $coverImage = null;
+
+    /** @var array<string, string> cover thumbnail size => path, filled by the image worker */
+    #[ORM\Column(type: Types::JSONB)]
+    private array $coverThumbnails = [];
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $repoUrl = null;
@@ -139,6 +143,51 @@ class Project
     public function setCoverImage(?string $coverImage): void
     {
         $this->coverImage = $coverImage;
+    }
+
+    /**
+     * Sets a new cover (or none) and returns the files of the previous one, to delete after the commit.
+     *
+     * @return list<string>
+     */
+    public function replaceCover(?string $path): array
+    {
+        $previous = null === $this->coverImage ? [] : [$this->coverImage, ...array_values($this->coverThumbnails)];
+        $this->coverImage = $path;
+        $this->coverThumbnails = [];
+
+        return $previous;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getCoverThumbnails(): array
+    {
+        return $this->coverThumbnails;
+    }
+
+    /**
+     * @param array<string, string> $coverThumbnails
+     */
+    public function setCoverThumbnails(array $coverThumbnails): void
+    {
+        $this->coverThumbnails = $coverThumbnails;
+    }
+
+    /**
+     * Every stored file of the project: cover, gallery images and all their thumbnails.
+     *
+     * @return list<string>
+     */
+    public function getUploadedFiles(): array
+    {
+        $files = null === $this->coverImage ? [] : [$this->coverImage, ...array_values($this->coverThumbnails)];
+        foreach ($this->images as $image) {
+            $files = [...$files, $image->getPath(), ...array_values($image->getThumbnails())];
+        }
+
+        return $files;
     }
 
     public function getRepoUrl(): ?string

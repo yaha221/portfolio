@@ -6,7 +6,6 @@ namespace App\Repository;
 
 use App\Entity\Project;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 use SortDirection;
 
@@ -21,33 +20,46 @@ class ProjectRepository extends ServiceEntityRepository
     }
 
     /**
-     * Published projects in display order, technologies fetched in the same query.
+     * One page of published projects in display order, with their technologies, in three cheap queries:
+     * the page itself (partial index, no joins), technologies of just these projects, the total.
+     * Doctrine's Paginator would instead number every published row joined with its technologies
+     * (~95 ms on 20k projects vs ~1 ms, see stage 5 notes in README).
      *
-     * @return Paginator<Project>
+     * @return array{items: list<Project>, total: int}
      */
-    public function findPublishedPage(?string $technologySlug, int $page, int $perPage): Paginator
+    public function findPublishedPage(?string $technologySlug, int $page, int $perPage): array
     {
-        $qb = $this->createQueryBuilder('p')
-            ->addSelect('t')
-            ->leftJoin('p.technologies', 't')
-            ->where('p.isPublished = true')
-            ->orderBy('p.sortOrder', SortDirection::Ascending)
-            ->addOrderBy('p.id', SortDirection::Ascending)
-            ->setFirstResult(($page - 1) * $perPage)
-            ->setMaxResults($perPage);
-
+        $filtered = $this->createQueryBuilder('p')->where('p.isPublished = true');
         if (null !== $technologySlug) {
-            // Subquery instead of filtering the join, so each project still lists all its technologies
-            $withTechnology = $this->createQueryBuilder('fp')
-                ->select('fp.id')
-                ->join('fp.technologies', 'ft')
-                ->where('ft.slug = :technology');
-
-            $qb->andWhere($qb->expr()->in('p.id', $withTechnology->getDQL()))
+            // EXISTS rather than a join, so each project still lists all its technologies
+            $filtered
+                ->andWhere('EXISTS (SELECT fp.id FROM App\Entity\Project fp JOIN fp.technologies ft WHERE fp = p AND ft.slug = :technology)')
                 ->setParameter('technology', $technologySlug);
         }
 
-        return new Paginator($qb->getQuery(), fetchJoinCollection: true);
+        $total = (int) (clone $filtered)->select('COUNT(p.id)')->getQuery()->getSingleScalarResult();
+
+        /** @var list<Project> $items */
+        $items = $filtered
+            ->orderBy('p.sortOrder', SortDirection::Ascending)
+            ->addOrderBy('p.id', SortDirection::Ascending)
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+
+        if ([] !== $items) {
+            // Fetch-joining the already loaded projects fills their technology collections in one query
+            $this->createQueryBuilder('p')
+                ->addSelect('t')
+                ->leftJoin('p.technologies', 't')
+                ->where('p IN (:projects)')
+                ->setParameter('projects', $items)
+                ->getQuery()
+                ->getResult();
+        }
+
+        return ['items' => $items, 'total' => $total];
     }
 
     /**

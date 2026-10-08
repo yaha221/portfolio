@@ -107,13 +107,7 @@ final class ProjectAdminController extends AbstractController
     #[ProblemResponse(404, 'Проект не найден')]
     public function delete(Project $project): Response
     {
-        $files = [];
-        if (null !== $project->getCoverImage()) {
-            $files[] = $project->getCoverImage();
-        }
-        foreach ($project->getImages() as $image) {
-            $files = [...$files, $image->getPath(), ...array_values($image->getThumbnails())];
-        }
+        $files = $project->getUploadedFiles();
 
         $this->entityManager->remove($project);
         $this->entityManager->flush();

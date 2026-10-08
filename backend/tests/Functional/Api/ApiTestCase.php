@@ -6,9 +6,11 @@ namespace App\Tests\Functional\Api;
 
 use App\Entity\User;
 use App\Factory\UserFactory;
+use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpKernel\Profiler\Profile;
 
 abstract class ApiTestCase extends WebTestCase
 {
@@ -18,6 +20,28 @@ abstract class ApiTestCase extends WebTestCase
     {
         // HTTPS: the refresh cookie is Secure, so the test browser sends it back only over https
         $this->client = self::createClient(server: ['HTTPS' => 'on']);
+        // Redis outlives ResetDatabase (which drops tables without Doctrine events): start every test cold
+        self::getContainer()->get('cache.public_api')->clear();
+    }
+
+    /**
+     * Number of SQL queries the next request runs (Symfony profiler, test env only).
+     */
+    protected function queriesOf(string $uri): int
+    {
+        // Factory inserts were logged on the current kernel: measure on a fresh one
+        $this->client->getKernel()->shutdown();
+        $this->client->getKernel()->boot();
+        $this->client->enableProfiler();
+        $this->client->request('GET', $uri);
+        self::assertResponseIsSuccessful();
+
+        $profile = $this->client->getProfile();
+        self::assertInstanceOf(Profile::class, $profile);
+        $collector = $profile->getCollector('db');
+        self::assertInstanceOf(DoctrineDataCollector::class, $collector);
+
+        return $collector->getQueryCount();
     }
 
     /**

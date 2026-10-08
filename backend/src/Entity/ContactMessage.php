@@ -11,7 +11,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ContactMessageRepository::class)]
-#[ORM\Index(name: 'contact_message_created_at_idx', columns: ['created_at'])]
+// Matches the admin list's ORDER BY created_at DESC, id DESC exactly (no extra sort step)
+#[ORM\Index(name: 'contact_message_created_at_id_idx', columns: ['created_at', 'id'])]
 class ContactMessage
 {
     #[ORM\Id]

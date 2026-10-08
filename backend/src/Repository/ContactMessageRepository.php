@@ -34,6 +34,10 @@ class ContactMessageRepository extends ServiceEntityRepository
             ->setMaxResults($perPage)
             ->getQuery();
 
-        return new Paginator($query, fetchJoinCollection: false);
+        $paginator = new Paginator($query, fetchJoinCollection: false);
+        // No joins: a plain COUNT instead of counting a nested copy of the whole ordered query
+        $paginator->setUseOutputWalkers(false);
+
+        return $paginator;
     }
 }

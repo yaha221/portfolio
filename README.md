@@ -78,6 +78,27 @@ docker compose exec php bin/console messenger:failed:remove <id>   # удали�
 docker compose restart worker                                      # после изменения кода обработчиков
 ```
 
+## Производительность
+
+**Кеш ответов.** Публичные GET (`/api/projects`, `/api/projects/{slug}`, `/api/technologies`, `/api/skills`, `/api/experience`) отдают готовый JSON из Redis (пул `cache.public_api`). Кеш не живёт по таймеру: `PublicApiCacheInvalidator` на каждой записи в БД (админка, воркер, фикстуры) снимает теги `projects` / `technologies` / `skills` / `experience`, так что изменения видны сразу. Если Redis недоступен, API работает без кеша (тайм-аут 0,3 с).
+
+**HTTP-кеш.** `Cache-Control: public, max-age=60` и `ETag`; при совпадении `If-None-Match` — пустой `304`. nginx сжимает JSON (gzip), загруженные картинки отдаются с `Cache-Control: immutable` на год (имена — UUID).
+
+**Запросы и индексы.** Проверено `EXPLAIN ANALYZE` на 20 тыс. проектов и 1 млн просмотров:
+
+| Запрос | Было | Стало | Что сделано |
+|---|---|---|---|
+| Страница проектов | 95 мс | 0,1 мс + 0,5 мс | Без Doctrine Paginator: страница без JOIN по частичному индексу `(sort_order, id) WHERE is_published`, технологии страницы — одним запросом |
+| Число проектов | 37 мс | 1,8 мс | Простой `COUNT` |
+| Аналитика по дням | 248 мс | 100 мс | Группировка по (день, посетитель) вместо `COUNT(DISTINCT)` |
+| Сообщения в админке | 0,17 мс | 0,07 мс | Индекс `(created_at, id)` под `ORDER BY` |
+
+Тест `PublicApiCacheTest` следит, чтобы список проектов делал ровно 3 запроса независимо от числа проектов и технологий, карточка проекта — 1, а повторный запрос — 0.
+
+```bash
+docker compose exec php bin/console cache:pool:clear cache.public_api   # сбросить кеш ответов вручную
+```
+
 ## Качество кода
 
 ```bash

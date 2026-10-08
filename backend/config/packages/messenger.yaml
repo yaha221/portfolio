@@ -25,6 +25,7 @@ framework:
             # are then sent synchronously from inside those handlers
             App\Message\ContactMessageReceived: async
             App\Message\ProjectImageUploaded: async
+            App\Message\ProjectCoverUploaded: async
             App\Message\ProjectPublished: async
             App\Message\PageViewed: async
 

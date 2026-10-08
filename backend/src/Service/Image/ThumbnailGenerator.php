@@ -7,6 +7,7 @@ namespace App\Service\Image;
 use GdImage;
 use InvalidArgumentException;
 use League\Flysystem\FilesystemOperator;
+use League\Flysystem\UnableToReadFile;
 use RuntimeException;
 
 /**
@@ -27,6 +28,7 @@ final readonly class ThumbnailGenerator
     /**
      * @return array<string, string> thumbnail name => path in the uploads storage
      *
+     * @throws UnableToReadFile         when the original is missing from the storage
      * @throws InvalidArgumentException when the file is not a readable image
      */
     public function generate(string $originalPath): array

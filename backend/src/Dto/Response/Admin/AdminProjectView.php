@@ -14,6 +14,7 @@ use OpenApi\Attributes as OA;
 final readonly class AdminProjectView
 {
     /**
+     * @param array<string, string>       $coverThumbnails
      * @param list<TechnologyRef>         $technologies
      * @param list<AdminProjectImageView> $images
      */
@@ -24,6 +25,8 @@ final readonly class AdminProjectView
         public string $description,
         public string $content,
         public ?string $coverImageUrl,
+        #[OA\Property(type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'string'))]
+        public array $coverThumbnails,
         public ?string $repoUrl,
         public ?string $demoUrl,
         public bool $isPublished,
@@ -48,6 +51,7 @@ final readonly class AdminProjectView
             $project->getDescription(),
             $project->getContent(),
             null === $cover ? null : $uploads->url($cover),
+            array_map($uploads->url(...), $project->getCoverThumbnails()),
             $project->getRepoUrl(),
             $project->getDemoUrl(),
             $project->isPublished(),

@@ -6,6 +6,7 @@ namespace App\Tests\Functional\Api\Admin;
 
 use App\Entity\Project;
 use App\Factory\ProjectFactory;
+use App\Message\ProjectCoverUploaded;
 use App\Message\ProjectImageUploaded;
 use App\Tests\Functional\Api\ApiTestCase;
 use League\Flysystem\FilesystemOperator;
@@ -100,20 +101,45 @@ final class ProjectMediaAdminApiTest extends ApiTestCase
         $this->assertProblem(404);
     }
 
-    public function testReplacingCoverDeletesThePreviousFile(): void
+    public function testReplacingCoverDeletesThePreviousFileAndItsThumbnails(): void
     {
         $firstCover = $this->upload('/cover', $this->png())['coverImageUrl'];
+        $this->transport('async')->queue()->assertContains(ProjectCoverUploaded::class, 1);
+        $this->transport('async')->process();
+        $firstThumbnails = $this->reloadProject()->getCoverThumbnails();
+        self::assertEqualsCanonicalizing(['small', 'large'], array_keys($firstThumbnails));
+
         $secondCover = $this->upload('/cover', $this->png())['coverImageUrl'];
 
         self::assertResponseIsSuccessful();
         self::assertNotSame($firstCover, $secondCover);
-        self::assertFalse($this->uploads()->fileExists($this->pathOf($firstCover)));
+        self::assertSame([], $this->reloadProject()->getCoverThumbnails());
+        foreach ([$this->pathOf($firstCover), ...array_values($firstThumbnails)] as $oldFile) {
+            self::assertFalse($this->uploads()->fileExists($oldFile));
+        }
         self::assertTrue($this->uploads()->fileExists($this->pathOf($secondCover)));
 
         $this->client->request('DELETE', $this->base().'/cover');
         self::assertResponseStatusCodeSame(204);
         self::assertNull($this->reloadProject()->getCoverImage());
         self::assertFalse($this->uploads()->fileExists($this->pathOf($secondCover)));
+    }
+
+    public function testMessageForAReplacedCoverIsSkipped(): void
+    {
+        $first = $this->pathOf($this->upload('/cover', $this->png())['coverImageUrl']);
+        $second = $this->pathOf($this->upload('/cover', $this->png())['coverImageUrl']);
+
+        // Both messages are still queued; the first one points at a cover that no longer exists
+        $this->transport('async')->process();
+
+        $thumbnails = $this->reloadProject()->getCoverThumbnails();
+        self::assertCount(2, $thumbnails);
+        foreach ($thumbnails as $path) {
+            self::assertMatchesRegularExpression('#^'.preg_quote(substr($second, 0, -\strlen('.png')), '#').'-#', $path);
+            self::assertTrue($this->uploads()->fileExists($path));
+        }
+        self::assertFalse($this->uploads()->fileExists(substr($first, 0, -\strlen('.png')).'-small.webp'));
     }
 
     /**

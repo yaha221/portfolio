@@ -9,8 +9,8 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PageViewRepository::class)]
+// Every analytics query filters by a period; no query looks up by path alone
 #[ORM\Index(name: 'page_view_created_at_idx', columns: ['created_at'])]
-#[ORM\Index(name: 'page_view_path_idx', columns: ['path'])]
 class PageView
 {
     private const int USER_AGENT_MAX_LENGTH = 255;

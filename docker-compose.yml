@@ -19,6 +19,8 @@ x-php: &php
       condition: service_healthy
     rabbitmq:
       condition: service_healthy
+    redis:
+      condition: service_healthy
 
 services:
   php:
@@ -70,6 +72,17 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 10s
+      retries: 10
+
+  # Cache for public API responses. Pure cache: no persistence, items are rebuilt from PostgreSQL.
+  # volatile-lru: evicts only items with a TTL, never the tag sets that invalidation relies on.
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "volatile-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
       retries: 10
 
   mailpit:

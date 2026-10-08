@@ -8,6 +8,7 @@ use App\Dto\Response\Admin\AdminProjectImageView;
 use App\Dto\Response\Admin\AdminProjectView;
 use App\Entity\Project;
 use App\Entity\ProjectImage;
+use App\Message\ProjectCoverUploaded;
 use App\Message\ProjectImageUploaded;
 use App\Messenger\BestEffortDispatcher;
 use App\OpenApi\ImageUploadBody;
@@ -105,10 +106,9 @@ final class ProjectMediaAdminController extends AbstractController
         #[MapUploadedFile(new Assert\Image(maxSize: '10M', mimeTypes: ['image/jpeg', 'image/png', 'image/webp']))]
         ?UploadedFile $file,
     ): JsonResponse {
-        $previous = $project->getCoverImage();
         $path = $this->storage->store(self::requireFile($file), self::DIRECTORY);
         try {
-            $project->setCoverImage($path);
+            $previousFiles = $project->replaceCover($path);
             $this->entityManager->flush();
         } catch (Throwable $exception) {
             $this->storage->delete([$path]);
@@ -116,9 +116,8 @@ final class ProjectMediaAdminController extends AbstractController
             throw $exception;
         }
 
-        if (null !== $previous) {
-            $this->storage->delete([$previous]);
-        }
+        $this->storage->delete($previousFiles);
+        $this->dispatcher->dispatch(new ProjectCoverUploaded((int) $project->getId(), $path));
 
         return $this->json(AdminProjectView::fromEntity($project, $this->uploads));
     }
@@ -128,11 +127,10 @@ final class ProjectMediaAdminController extends AbstractController
     #[OA\Response(response: 204, description: 'Обложка удалена')]
     public function deleteCover(Project $project): Response
     {
-        $previous = $project->getCoverImage();
-        if (null !== $previous) {
-            $project->setCoverImage(null);
+        if (null !== $project->getCoverImage()) {
+            $previousFiles = $project->replaceCover(null);
             $this->entityManager->flush();
-            $this->storage->delete([$previous]);
+            $this->storage->delete($previousFiles);
         }
 
         return new Response(null, Response::HTTP_NO_CONTENT);
