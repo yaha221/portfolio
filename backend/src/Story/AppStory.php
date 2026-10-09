@@ -11,12 +11,13 @@ use App\Factory\ProjectFactory;
 use App\Factory\SkillFactory;
 use App\Factory\TechnologyFactory;
 use App\Factory\UserFactory;
+use DateTimeImmutable;
 use Zenstruck\Foundry\Attribute\AsFixture;
 use Zenstruck\Foundry\Story;
 
 /**
- * Development data set. Technologies and skills mirror the project stack;
- * skill levels, experience and other projects are placeholders to replace.
+ * Development data set. Technologies and skills mirror the project stack, experience is real
+ * (the same rows as migration Version20261009123000); skill levels and other projects are placeholders.
  */
 #[AsFixture(name: 'main')]
 final class AppStory extends Story
@@ -45,6 +46,14 @@ final class AppStory extends Story
         ['TypeScript', 'Frontend', 3],
         ['Docker', 'DevOps', 4],
         ['CI/CD', 'DevOps', 3],
+    ];
+
+    // [company, position, start, end (null = current job), description] — from the resume
+    private const array EXPERIENCE = [
+        ['ОФИСМАГ', 'Программист-стажер', '2024-02-01', null, 'Изучение Bitrix Framework. Поддержка проекта.'],
+        ['Intrid', 'PHP-разработчик', '2023-09-01', '2024-02-01', 'Разработка программных продуктов.'],
+        ['ЭФКО, Управляющая компания', 'Младший веб-программист', '2022-12-01', '2023-03-01', 'Настройка окружения, работа с докером, работа с git.'],
+        ['Атос АйТи Солюшенс энд Сервисез', 'Программист-стажер', '2021-11-01', '2022-04-01', 'Обучение работе с C#, MSSQL, Sharepoint.'],
     ];
 
     public function build(): void
@@ -79,8 +88,15 @@ final class AppStory extends Story
             SkillFactory::createOne(['name' => $name, 'category' => $category, 'level' => $level, 'sortOrder' => $position]);
         }
 
-        ExperienceFactory::new()->current()->create();
-        ExperienceFactory::createMany(2);
+        foreach (self::EXPERIENCE as [$company, $position, $startDate, $endDate, $description]) {
+            ExperienceFactory::createOne([
+                'company' => $company,
+                'position' => $position,
+                'startDate' => new DateTimeImmutable($startDate),
+                'endDate' => null === $endDate ? null : new DateTimeImmutable($endDate),
+                'description' => $description,
+            ]);
+        }
 
         ContactMessageFactory::createMany(5);
         PageViewFactory::createMany(200);
