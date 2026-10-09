@@ -16,8 +16,8 @@ use Zenstruck\Foundry\Attribute\AsFixture;
 use Zenstruck\Foundry\Story;
 
 /**
- * Development data set. Technologies and skills mirror the project stack, experience is real
- * (the same rows as migration Version20261009123000); skill levels and other projects are placeholders.
+ * Development data set. Technologies mirror the project stack; skills and experience are real
+ * (the same rows as migrations Version20261009140000 and Version20261009123000); other projects are placeholders.
  */
 #[AsFixture(name: 'main')]
 final class AppStory extends Story
@@ -36,16 +36,29 @@ final class AppStory extends Story
         'Git' => 'git',
     ];
 
-    // [name, category, level 1–5]
+    // [name, category, level 1–5] — the resume plus the stack of this project, as in migration Version20261009140000
     private const array SKILLS = [
-        ['PHP', 'Backend', 5],
-        ['Symfony', 'Backend', 5],
-        ['PostgreSQL', 'Backend', 4],
-        ['RabbitMQ', 'Backend', 4],
-        ['Vue.js', 'Frontend', 3],
-        ['TypeScript', 'Frontend', 3],
-        ['Docker', 'DevOps', 4],
-        ['CI/CD', 'DevOps', 3],
+        ['PHP', 'Backend', 4],
+        ['Yii2', 'Backend', 3],
+        ['Bitrix Framework', 'Backend', 3],
+        ['Symfony', 'Backend', 3],
+        ['RabbitMQ', 'Backend', 2],
+        ['Redis', 'Backend', 2],
+        ['PostgreSQL', 'Базы данных', 3],
+        ['MySQL', 'Базы данных', 3],
+        ['MS SQL Server', 'Базы данных', 2],
+        ['HTML5', 'Frontend', 3],
+        ['CSS3', 'Frontend', 3],
+        ['Ajax', 'Frontend', 3],
+        ['Vue.js', 'Frontend', 2],
+        ['TypeScript', 'Frontend', 2],
+        ['Git', 'Инструменты', 4],
+        ['Docker', 'Инструменты', 3],
+        ['Docker Compose', 'Инструменты', 3],
+        ['Linux', 'Инструменты', 3],
+        ['Nginx', 'Инструменты', 2],
+        ['C#', '.NET', 2],
+        ['.NET Framework', '.NET', 2],
     ];
 
     // [company, position, start, end (null = current job), description] — from the resume

@@ -3,9 +3,9 @@
  */
 export const site = {
   name: 'Антон Степанюк',
-  role: 'Backend-разработчик',
+  role: 'PHP-разработчик',
   tagline:
-    'Проектирую и делаю веб-сервисы на PHP и Symfony: REST API, очереди, PostgreSQL. Люблю, когда код понятен, а сервис быстрый.',
+    'Пишу на PHP: Bitrix Framework и Yii2, PostgreSQL и MySQL, Docker. Легко осваиваю новое — этот сайт сделан на Symfony, RabbitMQ и Vue.',
   // Shown in the header and footer when filled, e.g. { label: 'GitHub', url: 'https://github.com/...' }
   links: [] as { label: string; url: string }[],
 }

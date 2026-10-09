@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
+use App\Factory\ExperienceFactory;
 use App\Factory\ProjectFactory;
 use App\Factory\SkillFactory;
 use App\Factory\TechnologyFactory;
@@ -28,7 +29,10 @@ final class AppStoryTest extends KernelTestCase
         ProjectFactory::repository()->assert()->count(6, ['isPublished' => true]);
         ProjectFactory::repository()->assert()->exists(['slug' => 'draft', 'isPublished' => false]);
         TechnologyFactory::repository()->assert()->count(10);
-        SkillFactory::repository()->assert()->count(8);
+        SkillFactory::repository()->assert()->count(21);
+        ExperienceFactory::repository()->assert()->count(4);
+        ExperienceFactory::repository()->assert()->count(1, ['endDate' => null]);
+        ExperienceFactory::repository()->assert()->exists(['company' => 'ОФИСМАГ', 'endDate' => null]);
     }
 
     public function testAdminCanSignInWithFixturePassword(): void
