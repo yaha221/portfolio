@@ -19,10 +19,17 @@ docker compose exec -T php bin/console lexik:jwt:generate-keypair --skip-if-exis
 chmod 600 backend/config/jwt/private.pem
 docker compose exec -T php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
 
+# Demo data with the admin user, on a fresh database only: fixtures:load empties the tables first
+users=$(docker compose exec -T database sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT count(*) FROM app_user"')
+if [ "$users" = "0" ]; then
+    docker compose exec -T php bin/console doctrine:fixtures:load --no-interaction
+fi
+
 cat <<'EOF'
 
-Ready:
-  API          http://localhost:8080
+Ready (all logins are listed in README.md, section "Доступы"):
+  Site         http://localhost:5173  (admin: /admin, admin@portfolio.local / password)
+  API          http://localhost:8080/api, Swagger UI at /api/doc
   RabbitMQ UI  http://localhost:15672  (app / app)
   Mailpit      http://localhost:8025
   Postgres     localhost:5432  (app / app, db portfolio)

@@ -17,18 +17,26 @@ PHP и Composer локально не нужны — всё работает в 
 ./setup.sh
 ```
 
-Скрипт запишет в `.env` ваш UID/GID (контейнеры работают от вашего пользователя), соберёт образы, поставит зависимости, поднимет стек, сгенерирует ключи JWT (`backend/config/jwt`, не в Git) и применит миграции.
+Скрипт запишет в `.env` ваш UID/GID (контейнеры работают от вашего пользователя), соберёт образы, поставит зависимости, поднимет стек, сгенерирует ключи JWT (`backend/config/jwt`, не в Git), применит миграции и в пустую базу загрузит демо-данные с админом.
 
-| Сервис | Адрес |
-|---|---|
-| Сайт (Vite dev server) | http://localhost:5173, админка — `/admin` |
-| API | http://localhost:8080/api |
-| Документация API (Swagger UI) | http://localhost:8080/api/doc, OpenAPI JSON — `/api/doc.json` |
-| RabbitMQ UI | http://localhost:15672 (app / app) |
-| Mailpit | http://localhost:8025 |
-| PostgreSQL | localhost:5432 (app / app, БД `portfolio`) |
+Потом проект запускается одной командой: `docker compose up -d` (через минуту после старта контейнер `frontend` поставит зависимости и поднимет Vite).
 
-Админ из фикстур: `admin@portfolio.local`, пароль — `UserFactory::DEFAULT_PASSWORD` в `backend/src/Factory/UserFactory.php` (только dev/test).
+## Доступы
+
+Все логины и пароли — только для локальной разработки.
+
+| Что | Адрес | Логин / пароль | Примечание |
+|---|---|---|---|
+| Сайт | http://localhost:5173 | — | Vite dev server, изменения видны сразу |
+| Админка | http://localhost:5173/admin | `admin@portfolio.local` / `password` | Пользователь из фикстур (`UserFactory::DEFAULT_PASSWORD`) |
+| API | http://localhost:8080/api | JWT админа для `/api/admin/*` | Как получить токен — раздел «Авторизация админки» |
+| Swagger UI | http://localhost:8080/api/doc | — | OpenAPI JSON — `/api/doc.json`; кнопка Authorize принимает JWT |
+| RabbitMQ UI | http://localhost:15672 | `app` / `app` | AMQP — `localhost:5672`, очередь `messages` |
+| Mailpit | http://localhost:8025 | — | Все письма приложения: админу и автоответы |
+| PostgreSQL | `localhost:5432` | `app` / `app` | БД `portfolio`, тесты — `portfolio_test` |
+| Redis | только внутри Docker, `redis:6379` | — | `docker compose exec redis redis-cli` |
+
+Пароли PostgreSQL и RabbitMQ задаются в корневом `.env` (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`); значения выше — по умолчанию.
 
 ## Авторизация админки
 
