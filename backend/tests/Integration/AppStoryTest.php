@@ -29,7 +29,7 @@ final class AppStoryTest extends KernelTestCase
         ProjectFactory::repository()->assert()->count(6, ['isPublished' => true]);
         ProjectFactory::repository()->assert()->exists(['slug' => 'draft', 'isPublished' => false]);
         TechnologyFactory::repository()->assert()->count(10);
-        SkillFactory::repository()->assert()->count(21);
+        SkillFactory::repository()->assert()->count(23);
         ExperienceFactory::repository()->assert()->count(4);
         ExperienceFactory::repository()->assert()->exists(['company' => 'ОФИСМАГ', 'position' => 'PHP-разработчик']);
     }
