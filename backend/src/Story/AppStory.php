@@ -61,9 +61,21 @@ final class AppStory extends Story
         ['.NET Framework', '.NET', 2],
     ];
 
+    // One duty per line: the about page keeps line breaks
+    private const string OFFICEMAG_DUTIES = <<<'TEXT'
+        — Разработка и поддержка крупного интернет-магазина на 1С-Битрикс (B2C и B2B).
+        — Разработка и доработка компонентов и шаблонов: каталог, карточка товара, корзина, оформление заказа, личный кабинет.
+        — Работа с инфоблоками, Highload-блоками и ORM D7; написание собственных модулей и обработчиков событий.
+        — Обмен данными с 1С: настройка и доработка выгрузки каталога, цен, остатков и заказов.
+        — Оптимизация производительности: анализ медленных SQL-запросов, индексы, кеширование компонентов.
+        — Исправление ошибок и доработка legacy-кода, рефакторинг устаревших участков.
+        — Работа с агентами и cron-задачами, импорт/экспорт данных (CSV, XML).
+        — Командная разработка: Git, code review, оценка задач, взаимодействие с аналитиками и менеджерами.
+        TEXT;
+
     // [company, position, start, end (null = current job), description] — from the resume
     private const array EXPERIENCE = [
-        ['ОФИСМАГ', 'Программист-стажер', '2024-02-01', null, 'Изучение Bitrix Framework. Поддержка проекта.'],
+        ['ОФИСМАГ', 'PHP-разработчик', '2024-02-01', '2026-09-01', self::OFFICEMAG_DUTIES],
         ['Intrid', 'PHP-разработчик', '2023-09-01', '2024-02-01', 'Разработка программных продуктов.'],
         ['ЭФКО, Управляющая компания', 'Младший веб-программист', '2022-12-01', '2023-03-01', 'Настройка окружения, работа с докером, работа с git.'],
         ['Атос АйТи Солюшенс энд Сервисез', 'Программист-стажер', '2021-11-01', '2022-04-01', 'Обучение работе с C#, MSSQL, Sharepoint.'],
@@ -106,12 +118,18 @@ final class AppStory extends Story
                 'company' => $company,
                 'position' => $position,
                 'startDate' => new DateTimeImmutable($startDate),
-                'endDate' => null === $endDate ? null : new DateTimeImmutable($endDate),
+                'endDate' => self::optionalDate($endDate),
                 'description' => $description,
             ]);
         }
 
         ContactMessageFactory::createMany(5);
         PageViewFactory::createMany(200);
+    }
+
+    // No end date = the current job
+    private static function optionalDate(?string $date): ?DateTimeImmutable
+    {
+        return null === $date ? null : new DateTimeImmutable($date);
     }
 }

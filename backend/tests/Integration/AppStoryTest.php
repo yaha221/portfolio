@@ -31,8 +31,7 @@ final class AppStoryTest extends KernelTestCase
         TechnologyFactory::repository()->assert()->count(10);
         SkillFactory::repository()->assert()->count(21);
         ExperienceFactory::repository()->assert()->count(4);
-        ExperienceFactory::repository()->assert()->count(1, ['endDate' => null]);
-        ExperienceFactory::repository()->assert()->exists(['company' => 'ОФИСМАГ', 'endDate' => null]);
+        ExperienceFactory::repository()->assert()->exists(['company' => 'ОФИСМАГ', 'position' => 'PHP-разработчик']);
     }
 
     public function testAdminCanSignInWithFixturePassword(): void
